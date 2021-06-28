@@ -15,15 +15,17 @@
 package linode
 
 import (
+	"fmt"
+	"path/filepath"
 	"unicode"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/linode/terraform-provider-linode/linode"
-	"github.com/pulumi/pulumi-terraform-bridge/v2/pkg/tfbridge"
-	shim "github.com/pulumi/pulumi-terraform-bridge/v2/pkg/tfshim"
-	shimv1 "github.com/pulumi/pulumi-terraform-bridge/v2/pkg/tfshim/sdk-v1"
-	"github.com/pulumi/pulumi/sdk/v2/go/common/resource"
-	"github.com/pulumi/pulumi/sdk/v2/go/common/tokens"
+	"github.com/pulumi/pulumi-linode/provider/v3/pkg/version"
+	"github.com/pulumi/pulumi-terraform-bridge/v3/pkg/tfbridge"
+	shim "github.com/pulumi/pulumi-terraform-bridge/v3/pkg/tfshim"
+	shimv2 "github.com/pulumi/pulumi-terraform-bridge/v3/pkg/tfshim/sdk-v2"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
+	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 )
 
 // all of the token components used below.
@@ -75,7 +77,7 @@ func boolRef(b bool) *bool {
 // Provider returns additional overlaid schema and metadata associated with the provider..
 func Provider() tfbridge.ProviderInfo {
 	// Instantiate the Terraform provider
-	p := shimv1.NewProvider(linode.Provider().(*schema.Provider))
+	p := shimv2.NewProvider(linode.Provider())
 
 	// Create a Pulumi provider mapping
 	prov := tfbridge.ProviderInfo{
@@ -88,11 +90,6 @@ func Provider() tfbridge.ProviderInfo {
 		Repository:  "https://github.com/pulumi/pulumi-linode",
 		GitHubOrg:   "linode",
 		Config: map[string]*tfbridge.SchemaInfo{
-			"token": {
-				Default: &tfbridge.DefaultInfo{
-					EnvVars: []string{"LINODE_TOKEN", "LINODE_API_TOKEN"},
-				},
-			},
 			"url": {
 				Default: &tfbridge.DefaultInfo{
 					EnvVars: []string{"LINODE_URL"},
@@ -193,8 +190,12 @@ func Provider() tfbridge.ProviderInfo {
 			"linode_lke_cluster":           {Tok: makeResource(mainMod, "LkeCluster")},
 			"linode_firewall":              {Tok: makeResource(mainMod, "Firewall")},
 			"linode_object_storage_object": {Tok: makeResource(mainMod, "ObjectStorageObject")},
+			"linode_vlan":                  {Tok: makeResource(mainMod, "Vlan")},
+			"linode_instance_ip":           {Tok: makeResource(mainMod, "InstanceIp")},
+			"linode_user":                  {Tok: makeResource(mainMod, "User")},
 		},
 		DataSources: map[string]*tfbridge.DataSourceInfo{
+			"linode_vlans":   {Tok: makeDataSource(mainMod, "getVlans")},
 			"linode_account": {Tok: makeDataSource(mainMod, "getAccount")},
 			"linode_domain":  {Tok: makeDataSource(mainMod, "getDomain")},
 			"linode_image":   {Tok: makeDataSource(mainMod, "getImage")},
@@ -238,30 +239,45 @@ func Provider() tfbridge.ProviderInfo {
 			"linode_object_storage_cluster": {
 				Tok: makeDataSource(mainMod, "getObjectStorageCluster"),
 			},
-			"linode_stackscript":   {Tok: makeDataSource(mainMod, "getStackScript")},
-			"linode_domain_record": {Tok: makeDataSource(mainMod, "getDomainRecord")},
-			"linode_volume":        {Tok: makeDataSource(mainMod, "getVolume")},
+			"linode_stackscript":         {Tok: makeDataSource(mainMod, "getStackScript")},
+			"linode_domain_record":       {Tok: makeDataSource(mainMod, "getDomainRecord")},
+			"linode_volume":              {Tok: makeDataSource(mainMod, "getVolume")},
+			"linode_lke_cluster":         {Tok: makeDataSource(mainMod, "getLkeCluster")},
+			"linode_firewall":            {Tok: makeDataSource(mainMod, "getFirewall")},
+			"linode_images":              {Tok: makeDataSource(mainMod, "getImages")},
+			"linode_instance_backups":    {Tok: makeDataSource(mainMod, "getInstanceBackups")},
+			"linode_instances":           {Tok: makeDataSource(mainMod, "getInstances")},
+			"linode_kernel":              {Tok: makeDataSource(mainMod, "getKernel")},
+			"linode_nodebalancer":        {Tok: makeDataSource(mainMod, "getNodeBalancer")},
+			"linode_nodebalancer_config": {Tok: makeDataSource(mainMod, "getNodeBalancerConfig")},
+			"linode_nodebalancer_node":   {Tok: makeDataSource(mainMod, "getNodeBalancerNode")},
 		},
 		JavaScript: &tfbridge.JavaScriptInfo{
-			// List any npm dependencies and their versions
 			Dependencies: map[string]string{
-				"@pulumi/pulumi": "^2.0.0",
+				"@pulumi/pulumi": "^3.0.0",
 			},
 			DevDependencies: map[string]string{
-				"@types/node": "^8.0.25", // so we can access strongly typed node definitions.
+				"@types/node": "^10.0.0", // so we can access strongly typed node definitions.
 				"@types/mime": "^2.0.0",
 			},
 		},
 		Python: &tfbridge.PythonInfo{
 			Requires: map[string]string{
-				"pulumi": ">=2.9.0,<3.0.0",
+				"pulumi": ">=3.0.0,<4.0.0",
 			},
-			UsesIOClasses: true,
+		},
+		Golang: &tfbridge.GolangInfo{
+			ImportBasePath: filepath.Join(
+				fmt.Sprintf("github.com/pulumi/pulumi-%[1]s/sdk/", mainPkg),
+				tfbridge.GetModuleMajorVersion(version.Version),
+				"go",
+				mainPkg,
+			),
+			GenerateResourceContainerTypes: true,
 		},
 		CSharp: &tfbridge.CSharpInfo{
 			PackageReferences: map[string]string{
-				"Pulumi":                       "2.*",
-				"System.Collections.Immutable": "1.6.0",
+				"Pulumi": "3.*",
 			},
 			Namespaces: map[string]string{
 				mainPkg: "Linode",

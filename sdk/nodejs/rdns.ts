@@ -10,6 +10,14 @@ import * as utilities from "./utilities";
  * Linode RDNS names must have a matching address value in an A or AAAA record.  This A or AAAA name must be resolvable at the time the RDNS resource is being associated.
  *
  * For more information, see the [Linode APIv4 docs](https://developers.linode.com/api/v4/networking-ips-address/#put) and the [Configure your Linode for Reverse DNS](https://www.linode.com/docs/networking/dns/configure-your-linode-for-reverse-dns-classic-manager/) guide.
+ *
+ * ## Import
+ *
+ * Linodes RDNS resources can be imported using the address as the `id`.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/rdns:Rdns foo 123.123.123.123
+ * ```
  */
 export class Rdns extends pulumi.CustomResource {
     /**
@@ -58,27 +66,24 @@ export class Rdns extends pulumi.CustomResource {
     constructor(name: string, args: RdnsArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: RdnsArgs | RdnsState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as RdnsState | undefined;
             inputs["address"] = state ? state.address : undefined;
             inputs["rdns"] = state ? state.rdns : undefined;
         } else {
             const args = argsOrState as RdnsArgs | undefined;
-            if (!args || args.address === undefined) {
+            if ((!args || args.address === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'address'");
             }
-            if (!args || args.rdns === undefined) {
+            if ((!args || args.rdns === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'rdns'");
             }
             inputs["address"] = args ? args.address : undefined;
             inputs["rdns"] = args ? args.rdns : undefined;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(Rdns.__pulumiType, name, inputs, opts);
     }

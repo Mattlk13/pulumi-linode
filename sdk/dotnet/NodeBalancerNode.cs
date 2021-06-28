@@ -28,51 +28,51 @@ namespace Pulumi.Linode
     ///     public MyStack()
     ///     {
     ///         var web = new List&lt;Linode.Instance&gt;();
-    ///         for (var rangeIndex = 0; rangeIndex &lt; 3; rangeIndex++)
+    ///         for (var rangeIndex = 0; rangeIndex &lt; "3"; rangeIndex++)
     ///         {
     ///             var range = new { Value = rangeIndex };
     ///             web.Add(new Linode.Instance($"web-{range.Value}", new Linode.InstanceArgs
     ///             {
+    ///                 Label = $"web-{range.Value + 1}",
+    ///                 Image = "linode/ubuntu18.04",
+    ///                 Region = "us-east",
+    ///                 Type = "g6-standard-1",
     ///                 AuthorizedKeys = 
     ///                 {
     ///                     "ssh-rsa AAAA...Gw== user@example.local",
     ///                 },
-    ///                 Image = "linode/ubuntu18.04",
-    ///                 Label = $"web-{range.Value + 1}",
-    ///                 PrivateIp = true,
-    ///                 Region = "us-east",
     ///                 RootPass = "test",
-    ///                 Type = "g6-standard-1",
+    ///                 PrivateIp = true,
     ///             }));
     ///         }
     ///         var foobar = new Linode.NodeBalancer("foobar", new Linode.NodeBalancerArgs
     ///         {
-    ///             ClientConnThrottle = 20,
     ///             Label = "mynodebalancer",
     ///             Region = "us-east",
+    ///             ClientConnThrottle = 20,
     ///         });
     ///         var foofig = new Linode.NodeBalancerConfig("foofig", new Linode.NodeBalancerConfigArgs
     ///         {
-    ///             Algorithm = "source",
-    ///             Check = "http",
-    ///             CheckAttempts = 3,
-    ///             CheckPath = "/foo",
-    ///             CheckTimeout = 30,
     ///             NodebalancerId = foobar.Id,
     ///             Port = 80,
     ///             Protocol = "http",
+    ///             Check = "http",
+    ///             CheckPath = "/foo",
+    ///             CheckAttempts = 3,
+    ///             CheckTimeout = 30,
     ///             Stickiness = "http_cookie",
+    ///             Algorithm = "source",
     ///         });
     ///         var foonode = new List&lt;Linode.NodeBalancerNode&gt;();
-    ///         for (var rangeIndex = 0; rangeIndex &lt; 3; rangeIndex++)
+    ///         for (var rangeIndex = 0; rangeIndex &lt; "3"; rangeIndex++)
     ///         {
     ///             var range = new { Value = rangeIndex };
     ///             foonode.Add(new Linode.NodeBalancerNode($"foonode-{range.Value}", new Linode.NodeBalancerNodeArgs
     ///             {
-    ///                 Address = web.Select(__item =&gt; __item.PrivateIpAddress).ToList()[range.Value].Apply(privateIpAddresses =&gt; $"{privateIpAddresses}:80"),
-    ///                 ConfigId = foofig.Id,
-    ///                 Label = "mynodebalancernode",
     ///                 NodebalancerId = foobar.Id,
+    ///                 ConfigId = foofig.Id,
+    ///                 Address = web.Select(__item =&gt; __item.PrivateIpAddress).ToList()[range.Value].Apply(privateIpAddresses =&gt; $"{privateIpAddresses}:80"),
+    ///                 Label = "mynodebalancernode",
     ///                 Weight = 50,
     ///             }));
     ///         }
@@ -84,12 +84,23 @@ namespace Pulumi.Linode
     /// 
     /// This resource exports the following attributes:
     /// 
-    /// * `status` - The current status of this node, based on the configured checks of its NodeBalancer Config. (unknown, UP, DOWN).
+    /// * `status` - The current status of this node, based on the configured checks of its NodeBalancer Config. (`unknown`, `UP`, `DOWN`).
     /// 
     /// * `config_id` - The ID of the NodeBalancerConfig this NodeBalancerNode is attached to.
     /// 
     /// * `nodebalancer_id` - The ID of the NodeBalancer this NodeBalancerNode is attached to.
+    /// 
+    /// ## Import
+    /// 
+    /// NodeBalancer Nodes can be imported using the NodeBalancer `nodebalancer_id` followed by the NodeBalancer Config `config_id` followed by the NodeBalancer Node `id`, separated by a comma, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/nodeBalancerNode:NodeBalancerNode https-foobar-1 1234567,7654321,9999999
+    /// ```
+    /// 
+    ///  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for NodeBalancer Nodes and other Linode resource types.
     /// </summary>
+    [LinodeResourceType("linode:index/nodeBalancerNode:NodeBalancerNode")]
     public partial class NodeBalancerNode : Pulumi.CustomResource
     {
         /// <summary>
@@ -111,7 +122,7 @@ namespace Pulumi.Linode
         public Output<string> Label { get; private set; } = null!;
 
         /// <summary>
-        /// The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it
+        /// The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it. (`accept`, `reject`, `drain`, `backup`)
         /// </summary>
         [Output("mode")]
         public Output<string> Mode { get; private set; } = null!;
@@ -199,7 +210,7 @@ namespace Pulumi.Linode
         public Input<string> Label { get; set; } = null!;
 
         /// <summary>
-        /// The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it
+        /// The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it. (`accept`, `reject`, `drain`, `backup`)
         /// </summary>
         [Input("mode")]
         public Input<string>? Mode { get; set; }
@@ -242,7 +253,7 @@ namespace Pulumi.Linode
         public Input<string>? Label { get; set; }
 
         /// <summary>
-        /// The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it
+        /// The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it. (`accept`, `reject`, `drain`, `backup`)
         /// </summary>
         [Input("mode")]
         public Input<string>? Mode { get; set; }

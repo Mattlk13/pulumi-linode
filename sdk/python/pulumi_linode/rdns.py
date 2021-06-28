@@ -5,21 +5,97 @@
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Mapping, Optional, Sequence, Union
-from . import _utilities, _tables
+from typing import Any, Mapping, Optional, Sequence, Union, overload
+from . import _utilities
 
-__all__ = ['Rdns']
+__all__ = ['RdnsArgs', 'Rdns']
+
+@pulumi.input_type
+class RdnsArgs:
+    def __init__(__self__, *,
+                 address: pulumi.Input[str],
+                 rdns: pulumi.Input[str]):
+        """
+        The set of arguments for constructing a Rdns resource.
+        :param pulumi.Input[str] address: The Public IPv4 or IPv6 address that will receive the `PTR` record.  A matching `A` or `AAAA` record must exist.
+        :param pulumi.Input[str] rdns: The name of the RDNS address.
+        """
+        pulumi.set(__self__, "address", address)
+        pulumi.set(__self__, "rdns", rdns)
+
+    @property
+    @pulumi.getter
+    def address(self) -> pulumi.Input[str]:
+        """
+        The Public IPv4 or IPv6 address that will receive the `PTR` record.  A matching `A` or `AAAA` record must exist.
+        """
+        return pulumi.get(self, "address")
+
+    @address.setter
+    def address(self, value: pulumi.Input[str]):
+        pulumi.set(self, "address", value)
+
+    @property
+    @pulumi.getter
+    def rdns(self) -> pulumi.Input[str]:
+        """
+        The name of the RDNS address.
+        """
+        return pulumi.get(self, "rdns")
+
+    @rdns.setter
+    def rdns(self, value: pulumi.Input[str]):
+        pulumi.set(self, "rdns", value)
+
+
+@pulumi.input_type
+class _RdnsState:
+    def __init__(__self__, *,
+                 address: Optional[pulumi.Input[str]] = None,
+                 rdns: Optional[pulumi.Input[str]] = None):
+        """
+        Input properties used for looking up and filtering Rdns resources.
+        :param pulumi.Input[str] address: The Public IPv4 or IPv6 address that will receive the `PTR` record.  A matching `A` or `AAAA` record must exist.
+        :param pulumi.Input[str] rdns: The name of the RDNS address.
+        """
+        if address is not None:
+            pulumi.set(__self__, "address", address)
+        if rdns is not None:
+            pulumi.set(__self__, "rdns", rdns)
+
+    @property
+    @pulumi.getter
+    def address(self) -> Optional[pulumi.Input[str]]:
+        """
+        The Public IPv4 or IPv6 address that will receive the `PTR` record.  A matching `A` or `AAAA` record must exist.
+        """
+        return pulumi.get(self, "address")
+
+    @address.setter
+    def address(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "address", value)
+
+    @property
+    @pulumi.getter
+    def rdns(self) -> Optional[pulumi.Input[str]]:
+        """
+        The name of the RDNS address.
+        """
+        return pulumi.get(self, "rdns")
+
+    @rdns.setter
+    def rdns(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "rdns", value)
 
 
 class Rdns(pulumi.CustomResource):
+    @overload
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
                  address: Optional[pulumi.Input[str]] = None,
                  rdns: Optional[pulumi.Input[str]] = None,
-                 __props__=None,
-                 __name__=None,
-                 __opts__=None):
+                 __props__=None):
         """
         Provides a Linode RDNS resource.  This can be used to create and modify RDNS records.
 
@@ -27,17 +103,58 @@ class Rdns(pulumi.CustomResource):
 
         For more information, see the [Linode APIv4 docs](https://developers.linode.com/api/v4/networking-ips-address/#put) and the [Configure your Linode for Reverse DNS](https://www.linode.com/docs/networking/dns/configure-your-linode-for-reverse-dns-classic-manager/) guide.
 
+        ## Import
+
+        Linodes RDNS resources can be imported using the address as the `id`.
+
+        ```sh
+         $ pulumi import linode:index/rdns:Rdns foo 123.123.123.123
+        ```
+
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[str] address: The Public IPv4 or IPv6 address that will receive the `PTR` record.  A matching `A` or `AAAA` record must exist.
         :param pulumi.Input[str] rdns: The name of the RDNS address.
         """
-        if __name__ is not None:
-            warnings.warn("explicit use of __name__ is deprecated", DeprecationWarning)
-            resource_name = __name__
-        if __opts__ is not None:
-            warnings.warn("explicit use of __opts__ is deprecated, use 'opts' instead", DeprecationWarning)
-            opts = __opts__
+        ...
+    @overload
+    def __init__(__self__,
+                 resource_name: str,
+                 args: RdnsArgs,
+                 opts: Optional[pulumi.ResourceOptions] = None):
+        """
+        Provides a Linode RDNS resource.  This can be used to create and modify RDNS records.
+
+        Linode RDNS names must have a matching address value in an A or AAAA record.  This A or AAAA name must be resolvable at the time the RDNS resource is being associated.
+
+        For more information, see the [Linode APIv4 docs](https://developers.linode.com/api/v4/networking-ips-address/#put) and the [Configure your Linode for Reverse DNS](https://www.linode.com/docs/networking/dns/configure-your-linode-for-reverse-dns-classic-manager/) guide.
+
+        ## Import
+
+        Linodes RDNS resources can be imported using the address as the `id`.
+
+        ```sh
+         $ pulumi import linode:index/rdns:Rdns foo 123.123.123.123
+        ```
+
+        :param str resource_name: The name of the resource.
+        :param RdnsArgs args: The arguments to use to populate this resource's properties.
+        :param pulumi.ResourceOptions opts: Options for the resource.
+        """
+        ...
+    def __init__(__self__, resource_name: str, *args, **kwargs):
+        resource_args, opts = _utilities.get_resource_args_opts(RdnsArgs, pulumi.ResourceOptions, *args, **kwargs)
+        if resource_args is not None:
+            __self__._internal_init(resource_name, opts, **resource_args.__dict__)
+        else:
+            __self__._internal_init(resource_name, *args, **kwargs)
+
+    def _internal_init(__self__,
+                 resource_name: str,
+                 opts: Optional[pulumi.ResourceOptions] = None,
+                 address: Optional[pulumi.Input[str]] = None,
+                 rdns: Optional[pulumi.Input[str]] = None,
+                 __props__=None):
         if opts is None:
             opts = pulumi.ResourceOptions()
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -47,14 +164,14 @@ class Rdns(pulumi.CustomResource):
         if opts.id is None:
             if __props__ is not None:
                 raise TypeError('__props__ is only valid when passed in combination with a valid opts.id to get an existing resource')
-            __props__ = dict()
+            __props__ = RdnsArgs.__new__(RdnsArgs)
 
-            if address is None:
+            if address is None and not opts.urn:
                 raise TypeError("Missing required property 'address'")
-            __props__['address'] = address
-            if rdns is None:
+            __props__.__dict__["address"] = address
+            if rdns is None and not opts.urn:
                 raise TypeError("Missing required property 'rdns'")
-            __props__['rdns'] = rdns
+            __props__.__dict__["rdns"] = rdns
         super(Rdns, __self__).__init__(
             'linode:index/rdns:Rdns',
             resource_name,
@@ -79,10 +196,10 @@ class Rdns(pulumi.CustomResource):
         """
         opts = pulumi.ResourceOptions.merge(opts, pulumi.ResourceOptions(id=id))
 
-        __props__ = dict()
+        __props__ = _RdnsState.__new__(_RdnsState)
 
-        __props__["address"] = address
-        __props__["rdns"] = rdns
+        __props__.__dict__["address"] = address
+        __props__.__dict__["rdns"] = rdns
         return Rdns(resource_name, opts=opts, __props__=__props__)
 
     @property
@@ -100,10 +217,4 @@ class Rdns(pulumi.CustomResource):
         The name of the RDNS address.
         """
         return pulumi.get(self, "rdns")
-
-    def translate_output_property(self, prop):
-        return _tables.CAMEL_TO_SNAKE_CASE_TABLE.get(prop) or prop
-
-    def translate_input_property(self, prop):
-        return _tables.SNAKE_TO_CAMEL_CASE_TABLE.get(prop) or prop
 

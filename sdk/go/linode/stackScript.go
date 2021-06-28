@@ -4,10 +4,11 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides a Linode StackScript resource.  This can be used to create, modify, and delete Linode StackScripts.  StackScripts are private or public managed scripts which run within an instance during startup.  StackScripts can include variables whose values are specified when the Instance is created.
@@ -24,38 +25,38 @@ import (
 // import (
 // 	"fmt"
 //
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
 // 	pulumi.Run(func(ctx *pulumi.Context) error {
-// 		_, err := linode.NewStackScript(ctx, "fooStackScript", &linode.StackScriptArgs{
+// 		fooStackScript, err := linode.NewStackScript(ctx, "fooStackScript", &linode.StackScriptArgs{
+// 			Label:       pulumi.String("foo"),
 // 			Description: pulumi.String("Installs a Package"),
+// 			Script:      pulumi.String(fmt.Sprintf("%v%v%v%v%v", "#!/bin/bash\n", "# <UDF name=\"package\" label=\"System Package to Install\" example=\"nginx\" default=\"\">\n", "apt-get -q update && apt-get -q -y install ", "$", "PACKAGE\n")),
 // 			Images: pulumi.StringArray{
 // 				pulumi.String("linode/ubuntu18.04"),
 // 				pulumi.String("linode/ubuntu16.04lts"),
 // 			},
-// 			Label:   pulumi.String("foo"),
 // 			RevNote: pulumi.String("initial version"),
-// 			Script:  pulumi.String(fmt.Sprintf("%v%v%v%v%v%v", "#!/bin/bash\n", "# <UDF name=\"package\" label=\"System Package to Install\" example=\"nginx\" default=\"\">\n", "apt-get -q update && apt-get -q -y install ", "$", "PACKAGE\n", "\n")),
 // 		})
 // 		if err != nil {
 // 			return err
 // 		}
 // 		_, err = linode.NewInstance(ctx, "fooInstance", &linode.InstanceArgs{
+// 			Image:  pulumi.String("linode/ubuntu18.04"),
+// 			Label:  pulumi.String("foo"),
+// 			Region: pulumi.String("us-east"),
+// 			Type:   pulumi.String("g6-nanode-1"),
 // 			AuthorizedKeys: pulumi.StringArray{
 // 				pulumi.String("..."),
 // 			},
-// 			Image:    pulumi.String("linode/ubuntu18.04"),
-// 			Label:    pulumi.String("foo"),
-// 			Region:   pulumi.String("us-east"),
-// 			RootPass: pulumi.String("..."),
+// 			RootPass:      pulumi.String("..."),
+// 			StackscriptId: fooStackScript.ID(),
 // 			StackscriptData: pulumi.StringMap{
 // 				"package": pulumi.String("nginx"),
 // 			},
-// 			StackscriptId: pulumi.Any(linode_stackscript.Install - nginx.Id),
-// 			Type:          pulumi.String("g6-nanode-1"),
 // 		})
 // 		if err != nil {
 // 			return err
@@ -93,6 +94,14 @@ import (
 //   * `manyOf` - A list of acceptable values for the field in any quantity, combination or order.
 //
 //   * `default` - The default value. If not specified, this value will be used.
+//
+// ## Import
+//
+// Linodes StackScripts can be imported using the Linode StackScript `id`, e.g.
+//
+// ```sh
+//  $ pulumi import linode:index/stackScript:StackScript mystackscript 1234567
+// ```
 type StackScript struct {
 	pulumi.CustomResourceState
 
@@ -128,20 +137,21 @@ type StackScript struct {
 // NewStackScript registers a new resource with the given unique name, arguments, and options.
 func NewStackScript(ctx *pulumi.Context,
 	name string, args *StackScriptArgs, opts ...pulumi.ResourceOption) (*StackScript, error) {
-	if args == nil || args.Description == nil {
-		return nil, errors.New("missing required argument 'Description'")
-	}
-	if args == nil || args.Images == nil {
-		return nil, errors.New("missing required argument 'Images'")
-	}
-	if args == nil || args.Label == nil {
-		return nil, errors.New("missing required argument 'Label'")
-	}
-	if args == nil || args.Script == nil {
-		return nil, errors.New("missing required argument 'Script'")
-	}
 	if args == nil {
-		args = &StackScriptArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.Description == nil {
+		return nil, errors.New("invalid value for required argument 'Description'")
+	}
+	if args.Images == nil {
+		return nil, errors.New("invalid value for required argument 'Images'")
+	}
+	if args.Label == nil {
+		return nil, errors.New("invalid value for required argument 'Label'")
+	}
+	if args.Script == nil {
+		return nil, errors.New("invalid value for required argument 'Script'")
 	}
 	var resource StackScript
 	err := ctx.RegisterResource("linode:index/stackScript:StackScript", name, args, &resource, opts...)
@@ -267,4 +277,191 @@ type StackScriptArgs struct {
 
 func (StackScriptArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*stackScriptArgs)(nil)).Elem()
+}
+
+type StackScriptInput interface {
+	pulumi.Input
+
+	ToStackScriptOutput() StackScriptOutput
+	ToStackScriptOutputWithContext(ctx context.Context) StackScriptOutput
+}
+
+func (*StackScript) ElementType() reflect.Type {
+	return reflect.TypeOf((*StackScript)(nil))
+}
+
+func (i *StackScript) ToStackScriptOutput() StackScriptOutput {
+	return i.ToStackScriptOutputWithContext(context.Background())
+}
+
+func (i *StackScript) ToStackScriptOutputWithContext(ctx context.Context) StackScriptOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(StackScriptOutput)
+}
+
+func (i *StackScript) ToStackScriptPtrOutput() StackScriptPtrOutput {
+	return i.ToStackScriptPtrOutputWithContext(context.Background())
+}
+
+func (i *StackScript) ToStackScriptPtrOutputWithContext(ctx context.Context) StackScriptPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(StackScriptPtrOutput)
+}
+
+type StackScriptPtrInput interface {
+	pulumi.Input
+
+	ToStackScriptPtrOutput() StackScriptPtrOutput
+	ToStackScriptPtrOutputWithContext(ctx context.Context) StackScriptPtrOutput
+}
+
+type stackScriptPtrType StackScriptArgs
+
+func (*stackScriptPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**StackScript)(nil))
+}
+
+func (i *stackScriptPtrType) ToStackScriptPtrOutput() StackScriptPtrOutput {
+	return i.ToStackScriptPtrOutputWithContext(context.Background())
+}
+
+func (i *stackScriptPtrType) ToStackScriptPtrOutputWithContext(ctx context.Context) StackScriptPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(StackScriptPtrOutput)
+}
+
+// StackScriptArrayInput is an input type that accepts StackScriptArray and StackScriptArrayOutput values.
+// You can construct a concrete instance of `StackScriptArrayInput` via:
+//
+//          StackScriptArray{ StackScriptArgs{...} }
+type StackScriptArrayInput interface {
+	pulumi.Input
+
+	ToStackScriptArrayOutput() StackScriptArrayOutput
+	ToStackScriptArrayOutputWithContext(context.Context) StackScriptArrayOutput
+}
+
+type StackScriptArray []StackScriptInput
+
+func (StackScriptArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*StackScript)(nil))
+}
+
+func (i StackScriptArray) ToStackScriptArrayOutput() StackScriptArrayOutput {
+	return i.ToStackScriptArrayOutputWithContext(context.Background())
+}
+
+func (i StackScriptArray) ToStackScriptArrayOutputWithContext(ctx context.Context) StackScriptArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(StackScriptArrayOutput)
+}
+
+// StackScriptMapInput is an input type that accepts StackScriptMap and StackScriptMapOutput values.
+// You can construct a concrete instance of `StackScriptMapInput` via:
+//
+//          StackScriptMap{ "key": StackScriptArgs{...} }
+type StackScriptMapInput interface {
+	pulumi.Input
+
+	ToStackScriptMapOutput() StackScriptMapOutput
+	ToStackScriptMapOutputWithContext(context.Context) StackScriptMapOutput
+}
+
+type StackScriptMap map[string]StackScriptInput
+
+func (StackScriptMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*StackScript)(nil))
+}
+
+func (i StackScriptMap) ToStackScriptMapOutput() StackScriptMapOutput {
+	return i.ToStackScriptMapOutputWithContext(context.Background())
+}
+
+func (i StackScriptMap) ToStackScriptMapOutputWithContext(ctx context.Context) StackScriptMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(StackScriptMapOutput)
+}
+
+type StackScriptOutput struct {
+	*pulumi.OutputState
+}
+
+func (StackScriptOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*StackScript)(nil))
+}
+
+func (o StackScriptOutput) ToStackScriptOutput() StackScriptOutput {
+	return o
+}
+
+func (o StackScriptOutput) ToStackScriptOutputWithContext(ctx context.Context) StackScriptOutput {
+	return o
+}
+
+func (o StackScriptOutput) ToStackScriptPtrOutput() StackScriptPtrOutput {
+	return o.ToStackScriptPtrOutputWithContext(context.Background())
+}
+
+func (o StackScriptOutput) ToStackScriptPtrOutputWithContext(ctx context.Context) StackScriptPtrOutput {
+	return o.ApplyT(func(v StackScript) *StackScript {
+		return &v
+	}).(StackScriptPtrOutput)
+}
+
+type StackScriptPtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (StackScriptPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**StackScript)(nil))
+}
+
+func (o StackScriptPtrOutput) ToStackScriptPtrOutput() StackScriptPtrOutput {
+	return o
+}
+
+func (o StackScriptPtrOutput) ToStackScriptPtrOutputWithContext(ctx context.Context) StackScriptPtrOutput {
+	return o
+}
+
+type StackScriptArrayOutput struct{ *pulumi.OutputState }
+
+func (StackScriptArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]StackScript)(nil))
+}
+
+func (o StackScriptArrayOutput) ToStackScriptArrayOutput() StackScriptArrayOutput {
+	return o
+}
+
+func (o StackScriptArrayOutput) ToStackScriptArrayOutputWithContext(ctx context.Context) StackScriptArrayOutput {
+	return o
+}
+
+func (o StackScriptArrayOutput) Index(i pulumi.IntInput) StackScriptOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) StackScript {
+		return vs[0].([]StackScript)[vs[1].(int)]
+	}).(StackScriptOutput)
+}
+
+type StackScriptMapOutput struct{ *pulumi.OutputState }
+
+func (StackScriptMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]StackScript)(nil))
+}
+
+func (o StackScriptMapOutput) ToStackScriptMapOutput() StackScriptMapOutput {
+	return o
+}
+
+func (o StackScriptMapOutput) ToStackScriptMapOutputWithContext(ctx context.Context) StackScriptMapOutput {
+	return o
+}
+
+func (o StackScriptMapOutput) MapIndex(k pulumi.StringInput) StackScriptOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) StackScript {
+		return vs[0].(map[string]StackScript)[vs[1].(string)]
+	}).(StackScriptOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(StackScriptOutput{})
+	pulumi.RegisterOutputType(StackScriptPtrOutput{})
+	pulumi.RegisterOutputType(StackScriptArrayOutput{})
+	pulumi.RegisterOutputType(StackScriptMapOutput{})
 }

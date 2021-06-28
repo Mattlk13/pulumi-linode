@@ -4,10 +4,11 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides a Linode Token resource.  This can be used to create, modify, and delete Linode API Personal Access Tokens.  Personal Access Tokens proxy user credentials for Linode API access.  This is necessary for tools, to interact with Linode services on a user's behalf.
@@ -24,8 +25,8 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -53,6 +54,16 @@ import (
 // * `token` - The token used to access the API.
 //
 // * `created` - The date this Token was created.
+//
+// ## Import
+//
+// Linodes Tokens can be imported using the Linode Token `id`, e.g.
+//
+// The secret token will not be imported.
+//
+// ```sh
+//  $ pulumi import linode:index/token:Token mytoken 1234567
+// ```
 type Token struct {
 	pulumi.CustomResourceState
 
@@ -62,7 +73,7 @@ type Token struct {
 	Expiry pulumi.StringPtrOutput `pulumi:"expiry"`
 	// A label for the Token.
 	Label pulumi.StringPtrOutput `pulumi:"label"`
-	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
 	Scopes pulumi.StringOutput `pulumi:"scopes"`
 	// The token used to access the API.
 	Token pulumi.StringOutput `pulumi:"token"`
@@ -71,11 +82,12 @@ type Token struct {
 // NewToken registers a new resource with the given unique name, arguments, and options.
 func NewToken(ctx *pulumi.Context,
 	name string, args *TokenArgs, opts ...pulumi.ResourceOption) (*Token, error) {
-	if args == nil || args.Scopes == nil {
-		return nil, errors.New("missing required argument 'Scopes'")
-	}
 	if args == nil {
-		args = &TokenArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.Scopes == nil {
+		return nil, errors.New("invalid value for required argument 'Scopes'")
 	}
 	var resource Token
 	err := ctx.RegisterResource("linode:index/token:Token", name, args, &resource, opts...)
@@ -105,7 +117,7 @@ type tokenState struct {
 	Expiry *string `pulumi:"expiry"`
 	// A label for the Token.
 	Label *string `pulumi:"label"`
-	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
 	Scopes *string `pulumi:"scopes"`
 	// The token used to access the API.
 	Token *string `pulumi:"token"`
@@ -118,7 +130,7 @@ type TokenState struct {
 	Expiry pulumi.StringPtrInput
 	// A label for the Token.
 	Label pulumi.StringPtrInput
-	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
 	Scopes pulumi.StringPtrInput
 	// The token used to access the API.
 	Token pulumi.StringPtrInput
@@ -133,7 +145,7 @@ type tokenArgs struct {
 	Expiry *string `pulumi:"expiry"`
 	// A label for the Token.
 	Label *string `pulumi:"label"`
-	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
 	Scopes string `pulumi:"scopes"`
 }
 
@@ -143,10 +155,197 @@ type TokenArgs struct {
 	Expiry pulumi.StringPtrInput
 	// A label for the Token.
 	Label pulumi.StringPtrInput
-	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+	// The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
 	Scopes pulumi.StringInput
 }
 
 func (TokenArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*tokenArgs)(nil)).Elem()
+}
+
+type TokenInput interface {
+	pulumi.Input
+
+	ToTokenOutput() TokenOutput
+	ToTokenOutputWithContext(ctx context.Context) TokenOutput
+}
+
+func (*Token) ElementType() reflect.Type {
+	return reflect.TypeOf((*Token)(nil))
+}
+
+func (i *Token) ToTokenOutput() TokenOutput {
+	return i.ToTokenOutputWithContext(context.Background())
+}
+
+func (i *Token) ToTokenOutputWithContext(ctx context.Context) TokenOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TokenOutput)
+}
+
+func (i *Token) ToTokenPtrOutput() TokenPtrOutput {
+	return i.ToTokenPtrOutputWithContext(context.Background())
+}
+
+func (i *Token) ToTokenPtrOutputWithContext(ctx context.Context) TokenPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TokenPtrOutput)
+}
+
+type TokenPtrInput interface {
+	pulumi.Input
+
+	ToTokenPtrOutput() TokenPtrOutput
+	ToTokenPtrOutputWithContext(ctx context.Context) TokenPtrOutput
+}
+
+type tokenPtrType TokenArgs
+
+func (*tokenPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**Token)(nil))
+}
+
+func (i *tokenPtrType) ToTokenPtrOutput() TokenPtrOutput {
+	return i.ToTokenPtrOutputWithContext(context.Background())
+}
+
+func (i *tokenPtrType) ToTokenPtrOutputWithContext(ctx context.Context) TokenPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TokenPtrOutput)
+}
+
+// TokenArrayInput is an input type that accepts TokenArray and TokenArrayOutput values.
+// You can construct a concrete instance of `TokenArrayInput` via:
+//
+//          TokenArray{ TokenArgs{...} }
+type TokenArrayInput interface {
+	pulumi.Input
+
+	ToTokenArrayOutput() TokenArrayOutput
+	ToTokenArrayOutputWithContext(context.Context) TokenArrayOutput
+}
+
+type TokenArray []TokenInput
+
+func (TokenArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*Token)(nil))
+}
+
+func (i TokenArray) ToTokenArrayOutput() TokenArrayOutput {
+	return i.ToTokenArrayOutputWithContext(context.Background())
+}
+
+func (i TokenArray) ToTokenArrayOutputWithContext(ctx context.Context) TokenArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TokenArrayOutput)
+}
+
+// TokenMapInput is an input type that accepts TokenMap and TokenMapOutput values.
+// You can construct a concrete instance of `TokenMapInput` via:
+//
+//          TokenMap{ "key": TokenArgs{...} }
+type TokenMapInput interface {
+	pulumi.Input
+
+	ToTokenMapOutput() TokenMapOutput
+	ToTokenMapOutputWithContext(context.Context) TokenMapOutput
+}
+
+type TokenMap map[string]TokenInput
+
+func (TokenMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*Token)(nil))
+}
+
+func (i TokenMap) ToTokenMapOutput() TokenMapOutput {
+	return i.ToTokenMapOutputWithContext(context.Background())
+}
+
+func (i TokenMap) ToTokenMapOutputWithContext(ctx context.Context) TokenMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(TokenMapOutput)
+}
+
+type TokenOutput struct {
+	*pulumi.OutputState
+}
+
+func (TokenOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*Token)(nil))
+}
+
+func (o TokenOutput) ToTokenOutput() TokenOutput {
+	return o
+}
+
+func (o TokenOutput) ToTokenOutputWithContext(ctx context.Context) TokenOutput {
+	return o
+}
+
+func (o TokenOutput) ToTokenPtrOutput() TokenPtrOutput {
+	return o.ToTokenPtrOutputWithContext(context.Background())
+}
+
+func (o TokenOutput) ToTokenPtrOutputWithContext(ctx context.Context) TokenPtrOutput {
+	return o.ApplyT(func(v Token) *Token {
+		return &v
+	}).(TokenPtrOutput)
+}
+
+type TokenPtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (TokenPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**Token)(nil))
+}
+
+func (o TokenPtrOutput) ToTokenPtrOutput() TokenPtrOutput {
+	return o
+}
+
+func (o TokenPtrOutput) ToTokenPtrOutputWithContext(ctx context.Context) TokenPtrOutput {
+	return o
+}
+
+type TokenArrayOutput struct{ *pulumi.OutputState }
+
+func (TokenArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]Token)(nil))
+}
+
+func (o TokenArrayOutput) ToTokenArrayOutput() TokenArrayOutput {
+	return o
+}
+
+func (o TokenArrayOutput) ToTokenArrayOutputWithContext(ctx context.Context) TokenArrayOutput {
+	return o
+}
+
+func (o TokenArrayOutput) Index(i pulumi.IntInput) TokenOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) Token {
+		return vs[0].([]Token)[vs[1].(int)]
+	}).(TokenOutput)
+}
+
+type TokenMapOutput struct{ *pulumi.OutputState }
+
+func (TokenMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]Token)(nil))
+}
+
+func (o TokenMapOutput) ToTokenMapOutput() TokenMapOutput {
+	return o
+}
+
+func (o TokenMapOutput) ToTokenMapOutputWithContext(ctx context.Context) TokenMapOutput {
+	return o
+}
+
+func (o TokenMapOutput) MapIndex(k pulumi.StringInput) TokenOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) Token {
+		return vs[0].(map[string]Token)[vs[1].(string)]
+	}).(TokenOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(TokenOutput{})
+	pulumi.RegisterOutputType(TokenPtrOutput{})
+	pulumi.RegisterOutputType(TokenArrayOutput{})
+	pulumi.RegisterOutputType(TokenMapOutput{})
 }

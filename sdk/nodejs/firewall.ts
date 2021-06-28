@@ -2,13 +2,10 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
- * > **NOTICE:** The Firewall feature is currently available through early access.
- *
  * Manages a Linode Firewall.
  *
  * ## Example Usage
@@ -20,7 +17,7 @@ import * as utilities from "./utilities";
  * const myInstance = new linode.Instance("myInstance", {
  *     label: "my_instance",
  *     image: "linode/ubuntu18.04",
- *     region: "us-east",
+ *     region: "us-southeast",
  *     type: "g6-standard-1",
  *     rootPass: `bogusPassword$`,
  *     swapSize: 256,
@@ -28,18 +25,54 @@ import * as utilities from "./utilities";
  * const myFirewall = new linode.Firewall("myFirewall", {
  *     label: "my_firewall",
  *     tags: ["test"],
- *     inbounds: [{
- *         protocol: "TCP",
- *         ports: ["80"],
- *         addresses: ["0.0.0.0/0"],
- *     }],
- *     outbounds: [{
- *         protocol: "TCP",
- *         ports: ["80"],
- *         addresses: ["0.0.0.0/0"],
- *     }],
+ *     inbounds: [
+ *         {
+ *             label: "allow-http",
+ *             action: "ACCEPT",
+ *             protocol: "TCP",
+ *             ports: "80",
+ *             ipv4s: ["0.0.0.0/0"],
+ *             ipv6s: ["ff00::/8"],
+ *         },
+ *         {
+ *             label: "allow-https",
+ *             action: "ACCEPT",
+ *             protocol: "TCP",
+ *             ports: "443",
+ *             ipv4s: ["0.0.0.0/0"],
+ *             ipv6s: ["ff00::/8"],
+ *         },
+ *     ],
+ *     inboundPolicy: "DROP",
+ *     outbounds: [
+ *         {
+ *             label: "reject-http",
+ *             action: "DROP",
+ *             protocol: "TCP",
+ *             ports: "80",
+ *             ipv4s: ["0.0.0.0/0"],
+ *             ipv6s: ["ff00::/8"],
+ *         },
+ *         {
+ *             label: "reject-https",
+ *             action: "DROP",
+ *             protocol: "TCP",
+ *             ports: "443",
+ *             ipv4s: ["0.0.0.0/0"],
+ *             ipv6s: ["ff00::/8"],
+ *         },
+ *     ],
+ *     outboundPolicy: "ACCEPT",
  *     linodes: [myInstance.id],
  * });
+ * ```
+ *
+ * ## Import
+ *
+ * Firewalls can be imported using the `id`, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/firewall:Firewall my_firewall 12345
  * ```
  */
 export class Firewall extends pulumi.CustomResource {
@@ -79,17 +112,25 @@ export class Firewall extends pulumi.CustomResource {
      */
     public readonly disabled!: pulumi.Output<boolean | undefined>;
     /**
+     * The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+     */
+    public readonly inboundPolicy!: pulumi.Output<string>;
+    /**
      * A firewall rule that specifies what inbound network traffic is allowed.
      */
     public readonly inbounds!: pulumi.Output<outputs.FirewallInbound[] | undefined>;
     /**
-     * This Firewall's unique label.
+     * Used to identify this rule. For display purposes only.
      */
     public readonly label!: pulumi.Output<string>;
     /**
      * A list of IDs of Linodes this Firewall should govern it's network traffic for.
      */
-    public readonly linodes!: pulumi.Output<number[]>;
+    public readonly linodes!: pulumi.Output<number[] | undefined>;
+    /**
+     * The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+     */
+    public readonly outboundPolicy!: pulumi.Output<string>;
     /**
      * A firewall rule that specifies what outbound network traffic is allowed.
      */
@@ -113,36 +154,43 @@ export class Firewall extends pulumi.CustomResource {
     constructor(name: string, args: FirewallArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: FirewallArgs | FirewallState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as FirewallState | undefined;
             inputs["devices"] = state ? state.devices : undefined;
             inputs["disabled"] = state ? state.disabled : undefined;
+            inputs["inboundPolicy"] = state ? state.inboundPolicy : undefined;
             inputs["inbounds"] = state ? state.inbounds : undefined;
             inputs["label"] = state ? state.label : undefined;
             inputs["linodes"] = state ? state.linodes : undefined;
+            inputs["outboundPolicy"] = state ? state.outboundPolicy : undefined;
             inputs["outbounds"] = state ? state.outbounds : undefined;
             inputs["status"] = state ? state.status : undefined;
             inputs["tags"] = state ? state.tags : undefined;
         } else {
             const args = argsOrState as FirewallArgs | undefined;
-            if (!args || args.linodes === undefined) {
-                throw new Error("Missing required property 'linodes'");
+            if ((!args || args.inboundPolicy === undefined) && !opts.urn) {
+                throw new Error("Missing required property 'inboundPolicy'");
+            }
+            if ((!args || args.label === undefined) && !opts.urn) {
+                throw new Error("Missing required property 'label'");
+            }
+            if ((!args || args.outboundPolicy === undefined) && !opts.urn) {
+                throw new Error("Missing required property 'outboundPolicy'");
             }
             inputs["disabled"] = args ? args.disabled : undefined;
+            inputs["inboundPolicy"] = args ? args.inboundPolicy : undefined;
             inputs["inbounds"] = args ? args.inbounds : undefined;
             inputs["label"] = args ? args.label : undefined;
             inputs["linodes"] = args ? args.linodes : undefined;
+            inputs["outboundPolicy"] = args ? args.outboundPolicy : undefined;
             inputs["outbounds"] = args ? args.outbounds : undefined;
             inputs["tags"] = args ? args.tags : undefined;
             inputs["devices"] = undefined /*out*/;
             inputs["status"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(Firewall.__pulumiType, name, inputs, opts);
     }
@@ -161,17 +209,25 @@ export interface FirewallState {
      */
     readonly disabled?: pulumi.Input<boolean>;
     /**
+     * The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+     */
+    readonly inboundPolicy?: pulumi.Input<string>;
+    /**
      * A firewall rule that specifies what inbound network traffic is allowed.
      */
     readonly inbounds?: pulumi.Input<pulumi.Input<inputs.FirewallInbound>[]>;
     /**
-     * This Firewall's unique label.
+     * Used to identify this rule. For display purposes only.
      */
     readonly label?: pulumi.Input<string>;
     /**
      * A list of IDs of Linodes this Firewall should govern it's network traffic for.
      */
     readonly linodes?: pulumi.Input<pulumi.Input<number>[]>;
+    /**
+     * The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+     */
+    readonly outboundPolicy?: pulumi.Input<string>;
     /**
      * A firewall rule that specifies what outbound network traffic is allowed.
      */
@@ -195,17 +251,25 @@ export interface FirewallArgs {
      */
     readonly disabled?: pulumi.Input<boolean>;
     /**
+     * The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+     */
+    readonly inboundPolicy: pulumi.Input<string>;
+    /**
      * A firewall rule that specifies what inbound network traffic is allowed.
      */
     readonly inbounds?: pulumi.Input<pulumi.Input<inputs.FirewallInbound>[]>;
     /**
-     * This Firewall's unique label.
+     * Used to identify this rule. For display purposes only.
      */
-    readonly label?: pulumi.Input<string>;
+    readonly label: pulumi.Input<string>;
     /**
      * A list of IDs of Linodes this Firewall should govern it's network traffic for.
      */
-    readonly linodes: pulumi.Input<pulumi.Input<number>[]>;
+    readonly linodes?: pulumi.Input<pulumi.Input<number>[]>;
+    /**
+     * The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+     */
+    readonly outboundPolicy: pulumi.Input<string>;
     /**
      * A firewall rule that specifies what outbound network traffic is allowed.
      */

@@ -39,6 +39,7 @@ namespace Pulumi.Linode
     /// }
     /// ```
     /// </summary>
+    [LinodeResourceType("linode:index/objectStorageObject:ObjectStorageObject")]
     public partial class ObjectStorageObject : Pulumi.CustomResource
     {
         /// <summary>
@@ -48,7 +49,7 @@ namespace Pulumi.Linode
         public Output<string> AccessKey { get; private set; } = null!;
 
         /// <summary>
-        /// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+        /// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
         /// </summary>
         [Output("acl")]
         public Output<string?> Acl { get; private set; } = null!;
@@ -107,6 +108,9 @@ namespace Pulumi.Linode
         [Output("contentType")]
         public Output<string> ContentType { get; private set; } = null!;
 
+        /// <summary>
+        /// The specific version of this object.
+        /// </summary>
         [Output("etag")]
         public Output<string> Etag { get; private set; } = null!;
 
@@ -205,7 +209,7 @@ namespace Pulumi.Linode
         public Input<string> AccessKey { get; set; } = null!;
 
         /// <summary>
-        /// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+        /// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
         /// </summary>
         [Input("acl")]
         public Input<string>? Acl { get; set; }
@@ -264,6 +268,9 @@ namespace Pulumi.Linode
         [Input("contentType")]
         public Input<string>? ContentType { get; set; }
 
+        /// <summary>
+        /// The specific version of this object.
+        /// </summary>
         [Input("etag")]
         public Input<string>? Etag { get; set; }
 
@@ -323,7 +330,7 @@ namespace Pulumi.Linode
         public Input<string>? AccessKey { get; set; }
 
         /// <summary>
-        /// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+        /// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
         /// </summary>
         [Input("acl")]
         public Input<string>? Acl { get; set; }
@@ -382,6 +389,9 @@ namespace Pulumi.Linode
         [Input("contentType")]
         public Input<string>? ContentType { get; set; }
 
+        /// <summary>
+        /// The specific version of this object.
+        /// </summary>
         [Input("etag")]
         public Input<string>? Etag { get; set; }
 

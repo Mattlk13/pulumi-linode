@@ -33,6 +33,16 @@ import * as utilities from "./utilities";
  * * `token` - The token used to access the API.
  *
  * * `created` - The date this Token was created.
+ *
+ * ## Import
+ *
+ * Linodes Tokens can be imported using the Linode Token `id`, e.g.
+ *
+ * The secret token will not be imported.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/token:Token mytoken 1234567
+ * ```
  */
 export class Token extends pulumi.CustomResource {
     /**
@@ -75,7 +85,7 @@ export class Token extends pulumi.CustomResource {
      */
     public readonly label!: pulumi.Output<string | undefined>;
     /**
-     * The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+     * The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
      */
     public readonly scopes!: pulumi.Output<string>;
     /**
@@ -93,7 +103,8 @@ export class Token extends pulumi.CustomResource {
     constructor(name: string, args: TokenArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: TokenArgs | TokenState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as TokenState | undefined;
             inputs["created"] = state ? state.created : undefined;
             inputs["expiry"] = state ? state.expiry : undefined;
@@ -102,7 +113,7 @@ export class Token extends pulumi.CustomResource {
             inputs["token"] = state ? state.token : undefined;
         } else {
             const args = argsOrState as TokenArgs | undefined;
-            if (!args || args.scopes === undefined) {
+            if ((!args || args.scopes === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'scopes'");
             }
             inputs["expiry"] = args ? args.expiry : undefined;
@@ -111,12 +122,8 @@ export class Token extends pulumi.CustomResource {
             inputs["created"] = undefined /*out*/;
             inputs["token"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(Token.__pulumiType, name, inputs, opts);
     }
@@ -139,7 +146,7 @@ export interface TokenState {
      */
     readonly label?: pulumi.Input<string>;
     /**
-     * The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+     * The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
      */
     readonly scopes?: pulumi.Input<string>;
     /**
@@ -161,7 +168,7 @@ export interface TokenArgs {
      */
     readonly label?: pulumi.Input<string>;
     /**
-     * The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure.
+     * The scopes this token was created with. These define what parts of the Account the token can be used to access. Many command-line tools, such as the Linode CLI, require tokens with access to *. Tokens with more restrictive scopes are generally more secure. All scopes can be viewed in [the Linode API documentation](https://www.linode.com/docs/api/#oauth-reference).
      */
     readonly scopes: pulumi.Input<string>;
 }

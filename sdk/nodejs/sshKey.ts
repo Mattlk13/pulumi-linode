@@ -8,33 +8,19 @@ import * as utilities from "./utilities";
  * Provides a Linode SSH Key resource.  This can be used to create, modify, and delete Linodes SSH Keys.  Managed SSH Keys allow instances to be created with a list of Linode usernames, whose SSH keys will be automatically applied to the root account's `~/.ssh/authorized_keys` file.
  * For more information, see the [Linode APIv4 docs](https://developers.linode.com/api/v4#operation/getSSHKeys).
  *
- * ## Example Usage
- *
- * The following example shows how one might use this resource to configure a SSH Key for access to a Linode Instance.
- *
- * ```typescript
- * import * as pulumi from "@pulumi/pulumi";
- * import * as fs from "fs";
- * import * as linode from "@pulumi/linode";
- *
- * const fooSshKey = new linode.SshKey("foo", {
- *     label: "foo",
- *     sshKey: fs.readFileSync("~/.ssh/id_rsa.pub", "utf-8").replace(/(\n|\r\n)*$/, ""),
- * });
- * const fooInstance = new linode.Instance("foo", {
- *     authorizedKeys: [fooSshKey.sshKey],
- *     image: "linode/ubuntu18.04",
- *     label: "foo",
- *     region: "us-east",
- *     rootPass: "...",
- *     type: "g6-nanode-1",
- * });
- * ```
  * ## Attributes
  *
  * This resource exports the following attributes:
  *
  * * `created` - The date this SSH Key was created.
+ *
+ * ## Import
+ *
+ * Linodes SSH Keys can be imported using the Linode SSH Key `id`, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/sshKey:SshKey mysshkey 1234567
+ * ```
  */
 export class SshKey extends pulumi.CustomResource {
     /**
@@ -87,29 +73,26 @@ export class SshKey extends pulumi.CustomResource {
     constructor(name: string, args: SshKeyArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: SshKeyArgs | SshKeyState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as SshKeyState | undefined;
             inputs["created"] = state ? state.created : undefined;
             inputs["label"] = state ? state.label : undefined;
             inputs["sshKey"] = state ? state.sshKey : undefined;
         } else {
             const args = argsOrState as SshKeyArgs | undefined;
-            if (!args || args.label === undefined) {
+            if ((!args || args.label === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'label'");
             }
-            if (!args || args.sshKey === undefined) {
+            if ((!args || args.sshKey === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'sshKey'");
             }
             inputs["label"] = args ? args.label : undefined;
             inputs["sshKey"] = args ? args.sshKey : undefined;
             inputs["created"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(SshKey.__pulumiType, name, inputs, opts);
     }

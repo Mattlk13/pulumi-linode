@@ -28,36 +28,35 @@ namespace Pulumi.Linode
     ///     {
     ///         var fooStackScript = new Linode.StackScript("fooStackScript", new Linode.StackScriptArgs
     ///         {
+    ///             Label = "foo",
     ///             Description = "Installs a Package",
+    ///             Script = @"#!/bin/bash
+    /// # &lt;UDF name=""package"" label=""System Package to Install"" example=""nginx"" default=""""&gt;
+    /// apt-get -q update &amp;&amp; apt-get -q -y install $PACKAGE
+    /// ",
     ///             Images = 
     ///             {
     ///                 "linode/ubuntu18.04",
     ///                 "linode/ubuntu16.04lts",
     ///             },
-    ///             Label = "foo",
     ///             RevNote = "initial version",
-    ///             Script = @"#!/bin/bash
-    /// # &lt;UDF name=""package"" label=""System Package to Install"" example=""nginx"" default=""""&gt;
-    /// apt-get -q update &amp;&amp; apt-get -q -y install $PACKAGE
-    /// 
-    /// ",
     ///         });
     ///         var fooInstance = new Linode.Instance("fooInstance", new Linode.InstanceArgs
     ///         {
+    ///             Image = "linode/ubuntu18.04",
+    ///             Label = "foo",
+    ///             Region = "us-east",
+    ///             Type = "g6-nanode-1",
     ///             AuthorizedKeys = 
     ///             {
     ///                 "...",
     ///             },
-    ///             Image = "linode/ubuntu18.04",
-    ///             Label = "foo",
-    ///             Region = "us-east",
     ///             RootPass = "...",
+    ///             StackscriptId = fooStackScript.Id,
     ///             StackscriptData = 
     ///             {
     ///                 { "package", "nginx" },
     ///             },
-    ///             StackscriptId = linode_stackscript.Install_nginx.Id,
-    ///             Type = "g6-nanode-1",
     ///         });
     ///     }
     /// 
@@ -92,7 +91,16 @@ namespace Pulumi.Linode
     ///   * `many_of` - A list of acceptable values for the field in any quantity, combination or order.
     ///   
     ///   * `default` - The default value. If not specified, this value will be used.
+    /// 
+    /// ## Import
+    /// 
+    /// Linodes StackScripts can be imported using the Linode StackScript `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/stackScript:StackScript mystackscript 1234567
+    /// ```
     /// </summary>
+    [LinodeResourceType("linode:index/stackScript:StackScript")]
     public partial class StackScript : Pulumi.CustomResource
     {
         /// <summary>

@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -27,9 +26,9 @@ import * as utilities from "./utilities";
  *
  * * `domain` - The base URL for this cluster.
  *
- * * `status` - This cluster's status.
+ * * `status` - This cluster's status. (`available`, `unavailable`)
  *
- * * `region` - The region this cluster is located in.
+ * * `region` - The region this cluster is located in. See all regions [here](https://api.linode.com/v4/regions).
  *
  * * `staticSiteDomain` - The base URL for this cluster used when hosting static sites.
  */

@@ -11,9 +11,37 @@ let __config = new pulumi.Config("linode");
  */
 export let apiVersion: string | undefined = __config.get("apiVersion") || utilities.getEnv("LINODE_API_VERSION");
 /**
+ * The rate in milliseconds to poll for events.
+ */
+export let eventPollMs: number | undefined = __config.getObject<number>("eventPollMs");
+/**
+ * The rate in milliseconds to poll for LKE events.
+ */
+export let lkeEventPollMs: number | undefined = __config.getObject<number>("lkeEventPollMs");
+/**
+ * The rate in milliseconds to poll for an LKE node to be ready.
+ */
+export let lkeNodeReadyPollMs: number | undefined = __config.getObject<number>("lkeNodeReadyPollMs");
+/**
+ * Maximum delay in milliseconds before retrying a request.
+ */
+export let maxRetryDelayMs: number | undefined = __config.getObject<number>("maxRetryDelayMs");
+/**
+ * Minimum delay in milliseconds before retrying a request.
+ */
+export let minRetryDelayMs: number | undefined = __config.getObject<number>("minRetryDelayMs");
+/**
+ * Skip waiting for a linode_instance resource to finish deleting.
+ */
+export let skipInstanceDeletePoll: boolean | undefined = __config.getObject<boolean>("skipInstanceDeletePoll");
+/**
+ * Skip waiting for a linode_instance resource to be running.
+ */
+export let skipInstanceReadyPoll: boolean | undefined = __config.getObject<boolean>("skipInstanceReadyPoll");
+/**
  * The token that allows you access to your Linode account
  */
-export let token: string | undefined = __config.get("token") || utilities.getEnv("LINODE_TOKEN", "LINODE_API_TOKEN");
+export let token: string | undefined = __config.get("token");
 /**
  * An HTTP User-Agent Prefix to prepend in API requests.
  */

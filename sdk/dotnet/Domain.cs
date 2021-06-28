@@ -27,6 +27,7 @@ namespace Pulumi.Linode
     ///     {
     ///         var foobarDomain = new Linode.Domain("foobarDomain", new Linode.DomainArgs
     ///         {
+    ///             Type = "master",
     ///             Domain = "foobar.example",
     ///             SoaEmail = "example@foobar.example",
     ///             Tags = 
@@ -34,7 +35,6 @@ namespace Pulumi.Linode
     ///                 "foo",
     ///                 "bar",
     ///             },
-    ///             Type = "master",
     ///         });
     ///         var foobarDomainRecord = new Linode.DomainRecord("foobarDomainRecord", new Linode.DomainRecordArgs
     ///         {
@@ -50,7 +50,18 @@ namespace Pulumi.Linode
     /// ## Attributes
     /// 
     /// This resource exports no additional attributes, however `status` may reflect degraded states.
+    /// 
+    /// ## Import
+    /// 
+    /// Linodes Domains can be imported using the Linode Domain `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/domain:Domain foobar 1234567
+    /// ```
+    /// 
+    ///  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Domains and other Linode resource types.
     /// </summary>
+    [LinodeResourceType("linode:index/domain:Domain")]
     public partial class Domain : Pulumi.CustomResource
     {
         /// <summary>

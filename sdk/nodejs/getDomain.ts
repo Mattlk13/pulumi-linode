@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -32,11 +31,11 @@ import * as utilities from "./utilities";
  *
  * * `domain` - The domain this Domain represents. These must be unique in our system; you cannot have two Domains representing the same domain
  *
- * * `type` - If this Domain represents the authoritative source of information for the domain it describes, or if it is a read-only copy of a master (also called a slave)
+ * * `type` - If this Domain represents the authoritative source of information for the domain it describes, or if it is a read-only copy of a master (also called a slave) (`master`, `slave`)
  *
  * * `group` - The group this Domain belongs to.
  *
- * * `status` - Used to control whether this Domain is currently being rendered.
+ * * `status` - Used to control whether this Domain is currently being rendered. (`disabled`, `active`)
  *
  * * `description` - A description for this Domain.
  *

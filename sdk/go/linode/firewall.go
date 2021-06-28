@@ -4,78 +4,21 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// > **NOTICE:** The Firewall feature is currently available through early access.
-//
 // Manages a Linode Firewall.
 //
-// ## Example Usage
+// ## Import
 //
-// ```go
-// package main
+// Firewalls can be imported using the `id`, e.g.
 //
-// import (
-// 	"fmt"
-//
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
-// )
-//
-// func main() {
-// 	pulumi.Run(func(ctx *pulumi.Context) error {
-// 		myInstance, err := linode.NewInstance(ctx, "myInstance", &linode.InstanceArgs{
-// 			Label:    pulumi.String("my_instance"),
-// 			Image:    pulumi.String("linode/ubuntu18.04"),
-// 			Region:   pulumi.String("us-east"),
-// 			Type:     pulumi.String("g6-standard-1"),
-// 			RootPass: pulumi.String(fmt.Sprintf("%v%v", "bogusPassword", "$")),
-// 			SwapSize: pulumi.Int(256),
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
-// 		_, err = linode.NewFirewall(ctx, "myFirewall", &linode.FirewallArgs{
-// 			Label: pulumi.String("my_firewall"),
-// 			Tags: pulumi.StringArray{
-// 				pulumi.String("test"),
-// 			},
-// 			Inbounds: linode.FirewallInboundArray{
-// 				&linode.FirewallInboundArgs{
-// 					Protocol: pulumi.String("TCP"),
-// 					Ports: pulumi.StringArray{
-// 						pulumi.String("80"),
-// 					},
-// 					Addresses: pulumi.StringArray{
-// 						pulumi.String("0.0.0.0/0"),
-// 					},
-// 				},
-// 			},
-// 			Outbounds: linode.FirewallOutboundArray{
-// 				&linode.FirewallOutboundArgs{
-// 					Protocol: pulumi.String("TCP"),
-// 					Ports: pulumi.StringArray{
-// 						pulumi.String("80"),
-// 					},
-// 					Addresses: pulumi.StringArray{
-// 						pulumi.String("0.0.0.0/0"),
-// 					},
-// 				},
-// 			},
-// 			Linodes: pulumi.IntArray{
-// 				myInstance.ID(),
-// 			},
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
-// 		return nil
-// 	})
-// }
+// ```sh
+//  $ pulumi import linode:index/firewall:Firewall my_firewall 12345
 // ```
 type Firewall struct {
 	pulumi.CustomResourceState
@@ -84,12 +27,16 @@ type Firewall struct {
 	Devices FirewallDeviceArrayOutput `pulumi:"devices"`
 	// If `true`, the Firewall's rules are not enforced (defaults to `false`).
 	Disabled pulumi.BoolPtrOutput `pulumi:"disabled"`
+	// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+	InboundPolicy pulumi.StringOutput `pulumi:"inboundPolicy"`
 	// A firewall rule that specifies what inbound network traffic is allowed.
 	Inbounds FirewallInboundArrayOutput `pulumi:"inbounds"`
-	// This Firewall's unique label.
+	// Used to identify this rule. For display purposes only.
 	Label pulumi.StringOutput `pulumi:"label"`
 	// A list of IDs of Linodes this Firewall should govern it's network traffic for.
 	Linodes pulumi.IntArrayOutput `pulumi:"linodes"`
+	// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+	OutboundPolicy pulumi.StringOutput `pulumi:"outboundPolicy"`
 	// A firewall rule that specifies what outbound network traffic is allowed.
 	Outbounds FirewallOutboundArrayOutput `pulumi:"outbounds"`
 	// The status of the Firewall.
@@ -101,11 +48,18 @@ type Firewall struct {
 // NewFirewall registers a new resource with the given unique name, arguments, and options.
 func NewFirewall(ctx *pulumi.Context,
 	name string, args *FirewallArgs, opts ...pulumi.ResourceOption) (*Firewall, error) {
-	if args == nil || args.Linodes == nil {
-		return nil, errors.New("missing required argument 'Linodes'")
-	}
 	if args == nil {
-		args = &FirewallArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.InboundPolicy == nil {
+		return nil, errors.New("invalid value for required argument 'InboundPolicy'")
+	}
+	if args.Label == nil {
+		return nil, errors.New("invalid value for required argument 'Label'")
+	}
+	if args.OutboundPolicy == nil {
+		return nil, errors.New("invalid value for required argument 'OutboundPolicy'")
 	}
 	var resource Firewall
 	err := ctx.RegisterResource("linode:index/firewall:Firewall", name, args, &resource, opts...)
@@ -133,12 +87,16 @@ type firewallState struct {
 	Devices []FirewallDevice `pulumi:"devices"`
 	// If `true`, the Firewall's rules are not enforced (defaults to `false`).
 	Disabled *bool `pulumi:"disabled"`
+	// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+	InboundPolicy *string `pulumi:"inboundPolicy"`
 	// A firewall rule that specifies what inbound network traffic is allowed.
 	Inbounds []FirewallInbound `pulumi:"inbounds"`
-	// This Firewall's unique label.
+	// Used to identify this rule. For display purposes only.
 	Label *string `pulumi:"label"`
 	// A list of IDs of Linodes this Firewall should govern it's network traffic for.
 	Linodes []int `pulumi:"linodes"`
+	// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+	OutboundPolicy *string `pulumi:"outboundPolicy"`
 	// A firewall rule that specifies what outbound network traffic is allowed.
 	Outbounds []FirewallOutbound `pulumi:"outbounds"`
 	// The status of the Firewall.
@@ -152,12 +110,16 @@ type FirewallState struct {
 	Devices FirewallDeviceArrayInput
 	// If `true`, the Firewall's rules are not enforced (defaults to `false`).
 	Disabled pulumi.BoolPtrInput
+	// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+	InboundPolicy pulumi.StringPtrInput
 	// A firewall rule that specifies what inbound network traffic is allowed.
 	Inbounds FirewallInboundArrayInput
-	// This Firewall's unique label.
+	// Used to identify this rule. For display purposes only.
 	Label pulumi.StringPtrInput
 	// A list of IDs of Linodes this Firewall should govern it's network traffic for.
 	Linodes pulumi.IntArrayInput
+	// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+	OutboundPolicy pulumi.StringPtrInput
 	// A firewall rule that specifies what outbound network traffic is allowed.
 	Outbounds FirewallOutboundArrayInput
 	// The status of the Firewall.
@@ -173,12 +135,16 @@ func (FirewallState) ElementType() reflect.Type {
 type firewallArgs struct {
 	// If `true`, the Firewall's rules are not enforced (defaults to `false`).
 	Disabled *bool `pulumi:"disabled"`
+	// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+	InboundPolicy string `pulumi:"inboundPolicy"`
 	// A firewall rule that specifies what inbound network traffic is allowed.
 	Inbounds []FirewallInbound `pulumi:"inbounds"`
-	// This Firewall's unique label.
-	Label *string `pulumi:"label"`
+	// Used to identify this rule. For display purposes only.
+	Label string `pulumi:"label"`
 	// A list of IDs of Linodes this Firewall should govern it's network traffic for.
 	Linodes []int `pulumi:"linodes"`
+	// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+	OutboundPolicy string `pulumi:"outboundPolicy"`
 	// A firewall rule that specifies what outbound network traffic is allowed.
 	Outbounds []FirewallOutbound `pulumi:"outbounds"`
 	// A list of tags applied to the Kubernetes cluster. Tags are for organizational purposes only.
@@ -189,12 +155,16 @@ type firewallArgs struct {
 type FirewallArgs struct {
 	// If `true`, the Firewall's rules are not enforced (defaults to `false`).
 	Disabled pulumi.BoolPtrInput
+	// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+	InboundPolicy pulumi.StringInput
 	// A firewall rule that specifies what inbound network traffic is allowed.
 	Inbounds FirewallInboundArrayInput
-	// This Firewall's unique label.
-	Label pulumi.StringPtrInput
+	// Used to identify this rule. For display purposes only.
+	Label pulumi.StringInput
 	// A list of IDs of Linodes this Firewall should govern it's network traffic for.
 	Linodes pulumi.IntArrayInput
+	// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+	OutboundPolicy pulumi.StringInput
 	// A firewall rule that specifies what outbound network traffic is allowed.
 	Outbounds FirewallOutboundArrayInput
 	// A list of tags applied to the Kubernetes cluster. Tags are for organizational purposes only.
@@ -203,4 +173,191 @@ type FirewallArgs struct {
 
 func (FirewallArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*firewallArgs)(nil)).Elem()
+}
+
+type FirewallInput interface {
+	pulumi.Input
+
+	ToFirewallOutput() FirewallOutput
+	ToFirewallOutputWithContext(ctx context.Context) FirewallOutput
+}
+
+func (*Firewall) ElementType() reflect.Type {
+	return reflect.TypeOf((*Firewall)(nil))
+}
+
+func (i *Firewall) ToFirewallOutput() FirewallOutput {
+	return i.ToFirewallOutputWithContext(context.Background())
+}
+
+func (i *Firewall) ToFirewallOutputWithContext(ctx context.Context) FirewallOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(FirewallOutput)
+}
+
+func (i *Firewall) ToFirewallPtrOutput() FirewallPtrOutput {
+	return i.ToFirewallPtrOutputWithContext(context.Background())
+}
+
+func (i *Firewall) ToFirewallPtrOutputWithContext(ctx context.Context) FirewallPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(FirewallPtrOutput)
+}
+
+type FirewallPtrInput interface {
+	pulumi.Input
+
+	ToFirewallPtrOutput() FirewallPtrOutput
+	ToFirewallPtrOutputWithContext(ctx context.Context) FirewallPtrOutput
+}
+
+type firewallPtrType FirewallArgs
+
+func (*firewallPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**Firewall)(nil))
+}
+
+func (i *firewallPtrType) ToFirewallPtrOutput() FirewallPtrOutput {
+	return i.ToFirewallPtrOutputWithContext(context.Background())
+}
+
+func (i *firewallPtrType) ToFirewallPtrOutputWithContext(ctx context.Context) FirewallPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(FirewallPtrOutput)
+}
+
+// FirewallArrayInput is an input type that accepts FirewallArray and FirewallArrayOutput values.
+// You can construct a concrete instance of `FirewallArrayInput` via:
+//
+//          FirewallArray{ FirewallArgs{...} }
+type FirewallArrayInput interface {
+	pulumi.Input
+
+	ToFirewallArrayOutput() FirewallArrayOutput
+	ToFirewallArrayOutputWithContext(context.Context) FirewallArrayOutput
+}
+
+type FirewallArray []FirewallInput
+
+func (FirewallArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*Firewall)(nil))
+}
+
+func (i FirewallArray) ToFirewallArrayOutput() FirewallArrayOutput {
+	return i.ToFirewallArrayOutputWithContext(context.Background())
+}
+
+func (i FirewallArray) ToFirewallArrayOutputWithContext(ctx context.Context) FirewallArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(FirewallArrayOutput)
+}
+
+// FirewallMapInput is an input type that accepts FirewallMap and FirewallMapOutput values.
+// You can construct a concrete instance of `FirewallMapInput` via:
+//
+//          FirewallMap{ "key": FirewallArgs{...} }
+type FirewallMapInput interface {
+	pulumi.Input
+
+	ToFirewallMapOutput() FirewallMapOutput
+	ToFirewallMapOutputWithContext(context.Context) FirewallMapOutput
+}
+
+type FirewallMap map[string]FirewallInput
+
+func (FirewallMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*Firewall)(nil))
+}
+
+func (i FirewallMap) ToFirewallMapOutput() FirewallMapOutput {
+	return i.ToFirewallMapOutputWithContext(context.Background())
+}
+
+func (i FirewallMap) ToFirewallMapOutputWithContext(ctx context.Context) FirewallMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(FirewallMapOutput)
+}
+
+type FirewallOutput struct {
+	*pulumi.OutputState
+}
+
+func (FirewallOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*Firewall)(nil))
+}
+
+func (o FirewallOutput) ToFirewallOutput() FirewallOutput {
+	return o
+}
+
+func (o FirewallOutput) ToFirewallOutputWithContext(ctx context.Context) FirewallOutput {
+	return o
+}
+
+func (o FirewallOutput) ToFirewallPtrOutput() FirewallPtrOutput {
+	return o.ToFirewallPtrOutputWithContext(context.Background())
+}
+
+func (o FirewallOutput) ToFirewallPtrOutputWithContext(ctx context.Context) FirewallPtrOutput {
+	return o.ApplyT(func(v Firewall) *Firewall {
+		return &v
+	}).(FirewallPtrOutput)
+}
+
+type FirewallPtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (FirewallPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**Firewall)(nil))
+}
+
+func (o FirewallPtrOutput) ToFirewallPtrOutput() FirewallPtrOutput {
+	return o
+}
+
+func (o FirewallPtrOutput) ToFirewallPtrOutputWithContext(ctx context.Context) FirewallPtrOutput {
+	return o
+}
+
+type FirewallArrayOutput struct{ *pulumi.OutputState }
+
+func (FirewallArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]Firewall)(nil))
+}
+
+func (o FirewallArrayOutput) ToFirewallArrayOutput() FirewallArrayOutput {
+	return o
+}
+
+func (o FirewallArrayOutput) ToFirewallArrayOutputWithContext(ctx context.Context) FirewallArrayOutput {
+	return o
+}
+
+func (o FirewallArrayOutput) Index(i pulumi.IntInput) FirewallOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) Firewall {
+		return vs[0].([]Firewall)[vs[1].(int)]
+	}).(FirewallOutput)
+}
+
+type FirewallMapOutput struct{ *pulumi.OutputState }
+
+func (FirewallMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]Firewall)(nil))
+}
+
+func (o FirewallMapOutput) ToFirewallMapOutput() FirewallMapOutput {
+	return o
+}
+
+func (o FirewallMapOutput) ToFirewallMapOutputWithContext(ctx context.Context) FirewallMapOutput {
+	return o
+}
+
+func (o FirewallMapOutput) MapIndex(k pulumi.StringInput) FirewallOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) Firewall {
+		return vs[0].(map[string]Firewall)[vs[1].(string)]
+	}).(FirewallOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(FirewallOutput{})
+	pulumi.RegisterOutputType(FirewallPtrOutput{})
+	pulumi.RegisterOutputType(FirewallArrayOutput{})
+	pulumi.RegisterOutputType(FirewallMapOutput{})
 }

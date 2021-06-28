@@ -4,8 +4,8 @@
 package config
 
 import (
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi/config"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
 // An HTTP User-Agent Prefix to prepend in API requests.
@@ -17,13 +17,44 @@ func GetApiVersion(ctx *pulumi.Context) string {
 	return getEnvOrDefault("", nil, "LINODE_API_VERSION").(string)
 }
 
+// The rate in milliseconds to poll for events.
+func GetEventPollMs(ctx *pulumi.Context) int {
+	return config.GetInt(ctx, "linode:eventPollMs")
+}
+
+// The rate in milliseconds to poll for LKE events.
+func GetLkeEventPollMs(ctx *pulumi.Context) int {
+	return config.GetInt(ctx, "linode:lkeEventPollMs")
+}
+
+// The rate in milliseconds to poll for an LKE node to be ready.
+func GetLkeNodeReadyPollMs(ctx *pulumi.Context) int {
+	return config.GetInt(ctx, "linode:lkeNodeReadyPollMs")
+}
+
+// Maximum delay in milliseconds before retrying a request.
+func GetMaxRetryDelayMs(ctx *pulumi.Context) int {
+	return config.GetInt(ctx, "linode:maxRetryDelayMs")
+}
+
+// Minimum delay in milliseconds before retrying a request.
+func GetMinRetryDelayMs(ctx *pulumi.Context) int {
+	return config.GetInt(ctx, "linode:minRetryDelayMs")
+}
+
+// Skip waiting for a linode_instance resource to finish deleting.
+func GetSkipInstanceDeletePoll(ctx *pulumi.Context) bool {
+	return config.GetBool(ctx, "linode:skipInstanceDeletePoll")
+}
+
+// Skip waiting for a linode_instance resource to be running.
+func GetSkipInstanceReadyPoll(ctx *pulumi.Context) bool {
+	return config.GetBool(ctx, "linode:skipInstanceReadyPoll")
+}
+
 // The token that allows you access to your Linode account
 func GetToken(ctx *pulumi.Context) string {
-	v, err := config.Try(ctx, "linode:token")
-	if err == nil {
-		return v
-	}
-	return getEnvOrDefault("", nil, "LINODE_TOKEN", "LINODE_API_TOKEN").(string)
+	return config.Get(ctx, "linode:token")
 }
 
 // An HTTP User-Agent Prefix to prepend in API requests.

@@ -10,8 +10,6 @@ using Pulumi.Serialization;
 namespace Pulumi.Linode
 {
     /// <summary>
-    /// &gt; **NOTICE:** The Firewall feature is currently available through early access.
-    /// 
     /// Manages a Linode Firewall.
     /// 
     /// ## Example Usage
@@ -28,7 +26,7 @@ namespace Pulumi.Linode
     ///         {
     ///             Label = "my_instance",
     ///             Image = "linode/ubuntu18.04",
-    ///             Region = "us-east",
+    ///             Region = "us-southeast",
     ///             Type = "g6-standard-1",
     ///             RootPass = "bogusPassword$",
     ///             SwapSize = 256,
@@ -44,32 +42,70 @@ namespace Pulumi.Linode
     ///             {
     ///                 new Linode.Inputs.FirewallInboundArgs
     ///                 {
+    ///                     Label = "allow-http",
+    ///                     Action = "ACCEPT",
     ///                     Protocol = "TCP",
-    ///                     Ports = 
-    ///                     {
-    ///                         "80",
-    ///                     },
-    ///                     Addresses = 
+    ///                     Ports = "80",
+    ///                     Ipv4s = 
     ///                     {
     ///                         "0.0.0.0/0",
     ///                     },
+    ///                     Ipv6s = 
+    ///                     {
+    ///                         "ff00::/8",
+    ///                     },
+    ///                 },
+    ///                 new Linode.Inputs.FirewallInboundArgs
+    ///                 {
+    ///                     Label = "allow-https",
+    ///                     Action = "ACCEPT",
+    ///                     Protocol = "TCP",
+    ///                     Ports = "443",
+    ///                     Ipv4s = 
+    ///                     {
+    ///                         "0.0.0.0/0",
+    ///                     },
+    ///                     Ipv6s = 
+    ///                     {
+    ///                         "ff00::/8",
+    ///                     },
     ///                 },
     ///             },
+    ///             InboundPolicy = "DROP",
     ///             Outbounds = 
     ///             {
     ///                 new Linode.Inputs.FirewallOutboundArgs
     ///                 {
+    ///                     Label = "reject-http",
+    ///                     Action = "DROP",
     ///                     Protocol = "TCP",
-    ///                     Ports = 
-    ///                     {
-    ///                         "80",
-    ///                     },
-    ///                     Addresses = 
+    ///                     Ports = "80",
+    ///                     Ipv4s = 
     ///                     {
     ///                         "0.0.0.0/0",
     ///                     },
+    ///                     Ipv6s = 
+    ///                     {
+    ///                         "ff00::/8",
+    ///                     },
+    ///                 },
+    ///                 new Linode.Inputs.FirewallOutboundArgs
+    ///                 {
+    ///                     Label = "reject-https",
+    ///                     Action = "DROP",
+    ///                     Protocol = "TCP",
+    ///                     Ports = "443",
+    ///                     Ipv4s = 
+    ///                     {
+    ///                         "0.0.0.0/0",
+    ///                     },
+    ///                     Ipv6s = 
+    ///                     {
+    ///                         "ff00::/8",
+    ///                     },
     ///                 },
     ///             },
+    ///             OutboundPolicy = "ACCEPT",
     ///             Linodes = 
     ///             {
     ///                 myInstance.Id,
@@ -79,7 +115,16 @@ namespace Pulumi.Linode
     /// 
     /// }
     /// ```
+    /// 
+    /// ## Import
+    /// 
+    /// Firewalls can be imported using the `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/firewall:Firewall my_firewall 12345
+    /// ```
     /// </summary>
+    [LinodeResourceType("linode:index/firewall:Firewall")]
     public partial class Firewall : Pulumi.CustomResource
     {
         /// <summary>
@@ -95,13 +140,19 @@ namespace Pulumi.Linode
         public Output<bool?> Disabled { get; private set; } = null!;
 
         /// <summary>
+        /// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+        /// </summary>
+        [Output("inboundPolicy")]
+        public Output<string> InboundPolicy { get; private set; } = null!;
+
+        /// <summary>
         /// A firewall rule that specifies what inbound network traffic is allowed.
         /// </summary>
         [Output("inbounds")]
         public Output<ImmutableArray<Outputs.FirewallInbound>> Inbounds { get; private set; } = null!;
 
         /// <summary>
-        /// This Firewall's unique label.
+        /// Used to identify this rule. For display purposes only.
         /// </summary>
         [Output("label")]
         public Output<string> Label { get; private set; } = null!;
@@ -111,6 +162,12 @@ namespace Pulumi.Linode
         /// </summary>
         [Output("linodes")]
         public Output<ImmutableArray<int>> Linodes { get; private set; } = null!;
+
+        /// <summary>
+        /// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+        /// </summary>
+        [Output("outboundPolicy")]
+        public Output<string> OutboundPolicy { get; private set; } = null!;
 
         /// <summary>
         /// A firewall rule that specifies what outbound network traffic is allowed.
@@ -182,6 +239,12 @@ namespace Pulumi.Linode
         [Input("disabled")]
         public Input<bool>? Disabled { get; set; }
 
+        /// <summary>
+        /// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+        /// </summary>
+        [Input("inboundPolicy", required: true)]
+        public Input<string> InboundPolicy { get; set; } = null!;
+
         [Input("inbounds")]
         private InputList<Inputs.FirewallInboundArgs>? _inbounds;
 
@@ -195,12 +258,12 @@ namespace Pulumi.Linode
         }
 
         /// <summary>
-        /// This Firewall's unique label.
+        /// Used to identify this rule. For display purposes only.
         /// </summary>
-        [Input("label")]
-        public Input<string>? Label { get; set; }
+        [Input("label", required: true)]
+        public Input<string> Label { get; set; } = null!;
 
-        [Input("linodes", required: true)]
+        [Input("linodes")]
         private InputList<int>? _linodes;
 
         /// <summary>
@@ -211,6 +274,12 @@ namespace Pulumi.Linode
             get => _linodes ?? (_linodes = new InputList<int>());
             set => _linodes = value;
         }
+
+        /// <summary>
+        /// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+        /// </summary>
+        [Input("outboundPolicy", required: true)]
+        public Input<string> OutboundPolicy { get; set; } = null!;
 
         [Input("outbounds")]
         private InputList<Inputs.FirewallOutboundArgs>? _outbounds;
@@ -261,6 +330,12 @@ namespace Pulumi.Linode
         [Input("disabled")]
         public Input<bool>? Disabled { get; set; }
 
+        /// <summary>
+        /// The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property of the Firewall Rule. (`ACCEPT`, `DROP`)
+        /// </summary>
+        [Input("inboundPolicy")]
+        public Input<string>? InboundPolicy { get; set; }
+
         [Input("inbounds")]
         private InputList<Inputs.FirewallInboundGetArgs>? _inbounds;
 
@@ -274,7 +349,7 @@ namespace Pulumi.Linode
         }
 
         /// <summary>
-        /// This Firewall's unique label.
+        /// Used to identify this rule. For display purposes only.
         /// </summary>
         [Input("label")]
         public Input<string>? Label { get; set; }
@@ -290,6 +365,12 @@ namespace Pulumi.Linode
             get => _linodes ?? (_linodes = new InputList<int>());
             set => _linodes = value;
         }
+
+        /// <summary>
+        /// The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule. (`ACCEPT`, `DROP`)
+        /// </summary>
+        [Input("outboundPolicy")]
+        public Input<string>? OutboundPolicy { get; set; }
 
         [Input("outbounds")]
         private InputList<Inputs.FirewallOutboundGetArgs>? _outbounds;

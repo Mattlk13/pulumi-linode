@@ -37,9 +37,33 @@ namespace Pulumi.Linode
     /// 
     /// }
     /// ```
+    /// 
+    /// ## Import
+    /// 
+    /// Linodes Object Storage Buckets can be imported using the resource `id` which is made of `cluster:label`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/objectStorageBucket:ObjectStorageBucket mybucket us-east-1:foobar
+    /// ```
     /// </summary>
+    [LinodeResourceType("linode:index/objectStorageBucket:ObjectStorageBucket")]
     public partial class ObjectStorageBucket : Pulumi.CustomResource
     {
+        /// <summary>
+        /// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+        /// </summary>
+        [Output("accessKey")]
+        public Output<string?> AccessKey { get; private set; } = null!;
+
+        /// <summary>
+        /// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+        /// </summary>
+        [Output("acl")]
+        public Output<string?> Acl { get; private set; } = null!;
+
+        /// <summary>
+        /// The cert used by this Object Storage Bucket.
+        /// </summary>
         [Output("cert")]
         public Output<Outputs.ObjectStorageBucketCert?> Cert { get; private set; } = null!;
 
@@ -50,10 +74,34 @@ namespace Pulumi.Linode
         public Output<string> Cluster { get; private set; } = null!;
 
         /// <summary>
+        /// If true, the bucket will have CORS enabled for all origins.
+        /// </summary>
+        [Output("corsEnabled")]
+        public Output<bool?> CorsEnabled { get; private set; } = null!;
+
+        /// <summary>
         /// The label of the Linode Object Storage Bucket.
         /// </summary>
         [Output("label")]
         public Output<string> Label { get; private set; } = null!;
+
+        /// <summary>
+        /// Lifecycle rules to be applied to the bucket.
+        /// </summary>
+        [Output("lifecycleRules")]
+        public Output<ImmutableArray<Outputs.ObjectStorageBucketLifecycleRule>> LifecycleRules { get; private set; } = null!;
+
+        /// <summary>
+        /// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+        /// </summary>
+        [Output("secretKey")]
+        public Output<string?> SecretKey { get; private set; } = null!;
+
+        /// <summary>
+        /// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+        /// </summary>
+        [Output("versioning")]
+        public Output<bool> Versioning { get; private set; } = null!;
 
 
         /// <summary>
@@ -101,6 +149,21 @@ namespace Pulumi.Linode
 
     public sealed class ObjectStorageBucketArgs : Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+        /// </summary>
+        [Input("accessKey")]
+        public Input<string>? AccessKey { get; set; }
+
+        /// <summary>
+        /// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+        /// </summary>
+        [Input("acl")]
+        public Input<string>? Acl { get; set; }
+
+        /// <summary>
+        /// The cert used by this Object Storage Bucket.
+        /// </summary>
         [Input("cert")]
         public Input<Inputs.ObjectStorageBucketCertArgs>? Cert { get; set; }
 
@@ -111,10 +174,40 @@ namespace Pulumi.Linode
         public Input<string> Cluster { get; set; } = null!;
 
         /// <summary>
+        /// If true, the bucket will have CORS enabled for all origins.
+        /// </summary>
+        [Input("corsEnabled")]
+        public Input<bool>? CorsEnabled { get; set; }
+
+        /// <summary>
         /// The label of the Linode Object Storage Bucket.
         /// </summary>
         [Input("label", required: true)]
         public Input<string> Label { get; set; } = null!;
+
+        [Input("lifecycleRules")]
+        private InputList<Inputs.ObjectStorageBucketLifecycleRuleArgs>? _lifecycleRules;
+
+        /// <summary>
+        /// Lifecycle rules to be applied to the bucket.
+        /// </summary>
+        public InputList<Inputs.ObjectStorageBucketLifecycleRuleArgs> LifecycleRules
+        {
+            get => _lifecycleRules ?? (_lifecycleRules = new InputList<Inputs.ObjectStorageBucketLifecycleRuleArgs>());
+            set => _lifecycleRules = value;
+        }
+
+        /// <summary>
+        /// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+        /// </summary>
+        [Input("secretKey")]
+        public Input<string>? SecretKey { get; set; }
+
+        /// <summary>
+        /// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+        /// </summary>
+        [Input("versioning")]
+        public Input<bool>? Versioning { get; set; }
 
         public ObjectStorageBucketArgs()
         {
@@ -123,6 +216,21 @@ namespace Pulumi.Linode
 
     public sealed class ObjectStorageBucketState : Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+        /// </summary>
+        [Input("accessKey")]
+        public Input<string>? AccessKey { get; set; }
+
+        /// <summary>
+        /// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+        /// </summary>
+        [Input("acl")]
+        public Input<string>? Acl { get; set; }
+
+        /// <summary>
+        /// The cert used by this Object Storage Bucket.
+        /// </summary>
         [Input("cert")]
         public Input<Inputs.ObjectStorageBucketCertGetArgs>? Cert { get; set; }
 
@@ -133,10 +241,40 @@ namespace Pulumi.Linode
         public Input<string>? Cluster { get; set; }
 
         /// <summary>
+        /// If true, the bucket will have CORS enabled for all origins.
+        /// </summary>
+        [Input("corsEnabled")]
+        public Input<bool>? CorsEnabled { get; set; }
+
+        /// <summary>
         /// The label of the Linode Object Storage Bucket.
         /// </summary>
         [Input("label")]
         public Input<string>? Label { get; set; }
+
+        [Input("lifecycleRules")]
+        private InputList<Inputs.ObjectStorageBucketLifecycleRuleGetArgs>? _lifecycleRules;
+
+        /// <summary>
+        /// Lifecycle rules to be applied to the bucket.
+        /// </summary>
+        public InputList<Inputs.ObjectStorageBucketLifecycleRuleGetArgs> LifecycleRules
+        {
+            get => _lifecycleRules ?? (_lifecycleRules = new InputList<Inputs.ObjectStorageBucketLifecycleRuleGetArgs>());
+            set => _lifecycleRules = value;
+        }
+
+        /// <summary>
+        /// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+        /// </summary>
+        [Input("secretKey")]
+        public Input<string>? SecretKey { get; set; }
+
+        /// <summary>
+        /// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+        /// </summary>
+        [Input("versioning")]
+        public Input<bool>? Versioning { get; set; }
 
         public ObjectStorageBucketState()
         {

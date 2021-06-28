@@ -48,7 +48,34 @@ namespace Pulumi.Linode
     /// * `ipv4` - The Public IPv4 Address of this NodeBalancer
     /// 
     /// * `ipv6` - The Public IPv6 Address of this NodeBalancer
+    /// 
+    /// * `created` - When this NodeBalancer was created
+    /// 
+    /// * `updated` - When this NodeBalancer was last updated.
+    /// 
+    /// * `transfer` - The network transfer stats for the current month
+    /// 
+    /// ### transfer
+    /// 
+    /// The following attributes are available on transfer:
+    /// 
+    /// * `in` - The total transfer, in MB, used by this NodeBalancer for the current month
+    /// 
+    /// * `out` - The total inbound transfer, in MB, used for this NodeBalancer for the current month
+    /// 
+    /// * `total` - The total outbound transfer, in MB, used for this NodeBalancer for the current month
+    /// 
+    /// ## Import
+    /// 
+    /// Linodes NodeBalancers can be imported using the Linode NodeBalancer `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/nodeBalancer:NodeBalancer mynodebalancer 1234567
+    /// ```
+    /// 
+    ///  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for NodeBalancers and other Linode resource types.
     /// </summary>
+    [LinodeResourceType("linode:index/nodeBalancer:NodeBalancer")]
     public partial class NodeBalancer : Pulumi.CustomResource
     {
         /// <summary>
@@ -57,6 +84,9 @@ namespace Pulumi.Linode
         [Output("clientConnThrottle")]
         public Output<int?> ClientConnThrottle { get; private set; } = null!;
 
+        /// <summary>
+        /// When this NodeBalancer was created.
+        /// </summary>
         [Output("created")]
         public Output<string> Created { get; private set; } = null!;
 
@@ -85,7 +115,7 @@ namespace Pulumi.Linode
         public Output<string?> Label { get; private set; } = null!;
 
         /// <summary>
-        /// The region where this NodeBalancer will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode NodeBalancer.*.
+        /// The region where this NodeBalancer will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions).  *Changing `region` forces the creation of a new Linode NodeBalancer.*.
         /// </summary>
         [Output("region")]
         public Output<string> Region { get; private set; } = null!;
@@ -96,9 +126,15 @@ namespace Pulumi.Linode
         [Output("tags")]
         public Output<ImmutableArray<string>> Tags { get; private set; } = null!;
 
-        [Output("transfer")]
-        public Output<Outputs.NodeBalancerTransfer> Transfer { get; private set; } = null!;
+        /// <summary>
+        /// Information about the amount of transfer this NodeBalancer has had so far this month.
+        /// </summary>
+        [Output("transfers")]
+        public Output<ImmutableArray<Outputs.NodeBalancerTransfer>> Transfers { get; private set; } = null!;
 
+        /// <summary>
+        /// When this NodeBalancer was last updated.
+        /// </summary>
         [Output("updated")]
         public Output<string> Updated { get; private set; } = null!;
 
@@ -161,7 +197,7 @@ namespace Pulumi.Linode
         public Input<string>? Label { get; set; }
 
         /// <summary>
-        /// The region where this NodeBalancer will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode NodeBalancer.*.
+        /// The region where this NodeBalancer will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions).  *Changing `region` forces the creation of a new Linode NodeBalancer.*.
         /// </summary>
         [Input("region", required: true)]
         public Input<string> Region { get; set; } = null!;
@@ -191,6 +227,9 @@ namespace Pulumi.Linode
         [Input("clientConnThrottle")]
         public Input<int>? ClientConnThrottle { get; set; }
 
+        /// <summary>
+        /// When this NodeBalancer was created.
+        /// </summary>
         [Input("created")]
         public Input<string>? Created { get; set; }
 
@@ -219,7 +258,7 @@ namespace Pulumi.Linode
         public Input<string>? Label { get; set; }
 
         /// <summary>
-        /// The region where this NodeBalancer will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode NodeBalancer.*.
+        /// The region where this NodeBalancer will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions).  *Changing `region` forces the creation of a new Linode NodeBalancer.*.
         /// </summary>
         [Input("region")]
         public Input<string>? Region { get; set; }
@@ -236,9 +275,21 @@ namespace Pulumi.Linode
             set => _tags = value;
         }
 
-        [Input("transfer")]
-        public Input<Inputs.NodeBalancerTransferGetArgs>? Transfer { get; set; }
+        [Input("transfers")]
+        private InputList<Inputs.NodeBalancerTransferGetArgs>? _transfers;
 
+        /// <summary>
+        /// Information about the amount of transfer this NodeBalancer has had so far this month.
+        /// </summary>
+        public InputList<Inputs.NodeBalancerTransferGetArgs> Transfers
+        {
+            get => _transfers ?? (_transfers = new InputList<Inputs.NodeBalancerTransferGetArgs>());
+            set => _transfers = value;
+        }
+
+        /// <summary>
+        /// When this NodeBalancer was last updated.
+        /// </summary>
         [Input("updated")]
         public Input<string>? Updated { get; set; }
 

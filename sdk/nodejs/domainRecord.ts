@@ -16,13 +16,13 @@ import * as utilities from "./utilities";
  * import * as pulumi from "@pulumi/pulumi";
  * import * as linode from "@pulumi/linode";
  *
- * const foobarDomain = new linode.Domain("foobar", {
+ * const foobarDomain = new linode.Domain("foobarDomain", {
+ *     type: "master",
  *     domain: "foobar.example",
  *     soaEmail: "example@foobar.example",
- *     type: "master",
  * });
- * const foobarDomainRecord = new linode.DomainRecord("foobar", {
- *     domainId: foobarDomain.id.apply(id => Number.parseFloat(id)),
+ * const foobarDomainRecord = new linode.DomainRecord("foobarDomainRecord", {
+ *     domainId: foobarDomain.id,
  *     name: "www",
  *     recordType: "CNAME",
  *     target: "foobar.example",
@@ -31,6 +31,16 @@ import * as utilities from "./utilities";
  * ## Attributes
  *
  * This resource exports no additional attributes.
+ *
+ * ## Import
+ *
+ * Linodes Domain Records can be imported using the Linode Domain `id` followed by the Domain Record `id` separated by a comma, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/domainRecord:DomainRecord www-foobar 1234567,7654321
+ * ```
+ *
+ *  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Domain Records and other Linode resource types.
  */
 export class DomainRecord extends pulumi.CustomResource {
     /**
@@ -81,7 +91,7 @@ export class DomainRecord extends pulumi.CustomResource {
      */
     public readonly protocol!: pulumi.Output<string | undefined>;
     /**
-     * The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+     * The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
      */
     public readonly recordType!: pulumi.Output<string>;
     /**
@@ -115,7 +125,8 @@ export class DomainRecord extends pulumi.CustomResource {
     constructor(name: string, args: DomainRecordArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: DomainRecordArgs | DomainRecordState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as DomainRecordState | undefined;
             inputs["domainId"] = state ? state.domainId : undefined;
             inputs["name"] = state ? state.name : undefined;
@@ -130,13 +141,13 @@ export class DomainRecord extends pulumi.CustomResource {
             inputs["weight"] = state ? state.weight : undefined;
         } else {
             const args = argsOrState as DomainRecordArgs | undefined;
-            if (!args || args.domainId === undefined) {
+            if ((!args || args.domainId === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'domainId'");
             }
-            if (!args || args.recordType === undefined) {
+            if ((!args || args.recordType === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'recordType'");
             }
-            if (!args || args.target === undefined) {
+            if ((!args || args.target === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'target'");
             }
             inputs["domainId"] = args ? args.domainId : undefined;
@@ -151,12 +162,8 @@ export class DomainRecord extends pulumi.CustomResource {
             inputs["ttlSec"] = args ? args.ttlSec : undefined;
             inputs["weight"] = args ? args.weight : undefined;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(DomainRecord.__pulumiType, name, inputs, opts);
     }
@@ -187,7 +194,7 @@ export interface DomainRecordState {
      */
     readonly protocol?: pulumi.Input<string>;
     /**
-     * The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+     * The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
      */
     readonly recordType?: pulumi.Input<string>;
     /**
@@ -237,7 +244,7 @@ export interface DomainRecordArgs {
      */
     readonly protocol?: pulumi.Input<string>;
     /**
-     * The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+     * The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
      */
     readonly recordType: pulumi.Input<string>;
     /**

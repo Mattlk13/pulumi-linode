@@ -5,11 +5,18 @@
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Mapping, Optional, Sequence, Union
-from .. import _utilities, _tables
+from typing import Any, Mapping, Optional, Sequence, Union, overload
+from .. import _utilities
 
 __all__ = [
     'api_version',
+    'event_poll_ms',
+    'lke_event_poll_ms',
+    'lke_node_ready_poll_ms',
+    'max_retry_delay_ms',
+    'min_retry_delay_ms',
+    'skip_instance_delete_poll',
+    'skip_instance_ready_poll',
     'token',
     'ua_prefix',
     'url',
@@ -22,7 +29,42 @@ api_version = __config__.get('apiVersion') or _utilities.get_env('LINODE_API_VER
 An HTTP User-Agent Prefix to prepend in API requests.
 """
 
-token = __config__.get('token') or _utilities.get_env('LINODE_TOKEN', 'LINODE_API_TOKEN')
+event_poll_ms = __config__.get('eventPollMs')
+"""
+The rate in milliseconds to poll for events.
+"""
+
+lke_event_poll_ms = __config__.get('lkeEventPollMs')
+"""
+The rate in milliseconds to poll for LKE events.
+"""
+
+lke_node_ready_poll_ms = __config__.get('lkeNodeReadyPollMs')
+"""
+The rate in milliseconds to poll for an LKE node to be ready.
+"""
+
+max_retry_delay_ms = __config__.get('maxRetryDelayMs')
+"""
+Maximum delay in milliseconds before retrying a request.
+"""
+
+min_retry_delay_ms = __config__.get('minRetryDelayMs')
+"""
+Minimum delay in milliseconds before retrying a request.
+"""
+
+skip_instance_delete_poll = __config__.get('skipInstanceDeletePoll')
+"""
+Skip waiting for a linode_instance resource to finish deleting.
+"""
+
+skip_instance_ready_poll = __config__.get('skipInstanceReadyPoll')
+"""
+Skip waiting for a linode_instance resource to be running.
+"""
+
+token = __config__.get('token')
 """
 The token that allows you access to your Linode account
 """

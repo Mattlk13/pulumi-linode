@@ -5,8 +5,8 @@
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Mapping, Optional, Sequence, Union
-from . import _utilities, _tables
+from typing import Any, Mapping, Optional, Sequence, Union, overload
+from . import _utilities
 
 __all__ = [
     'GetObjectStorageClusterResult',
@@ -100,9 +100,9 @@ def get_object_storage_cluster(domain: Optional[str] = None,
 
     * `domain` - The base URL for this cluster.
 
-    * `status` - This cluster's status.
+    * `status` - This cluster's status. (`available`, `unavailable`)
 
-    * `region` - The region this cluster is located in.
+    * `region` - The region this cluster is located in. See all regions [here](https://api.linode.com/v4/regions).
 
     * `static_site_domain` - The base URL for this cluster used when hosting static sites.
 

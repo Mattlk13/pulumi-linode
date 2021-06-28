@@ -6,6 +6,64 @@ _(none)_
 
 ---
 
+## 3.2.0 (2021-06-28)
+* Upgrade to v1.19.1 of the Linode Terraform Provider
+
+## 3.1.0 (2021-05-21)
+* Upgrade to v1.18.0 of the Linode Terraform Provider  
+  **PLEASE NOTE:**  
+  * This provider no longer supports `linode.index.vlan` as this has been replaced upstream. Previously, an instance_id
+    was passed to a VLan. It has now been changed in the Linode API to pass VLan details to the Instance as part of 
+    the `interfaces` configuration
+
+## 3.0.1 (2021-04-30)
+* Upgrade to v1.17.1 of the Linode Terraform Provider
+
+## 3.0.0 (20201-04-19)
+* Upgrade to v1.17.0 of the Linode Terraform Provider
+* Depend on Pulumi 3.0, which includes improvements to Python resource arguments and key translation, Go SDK performance,
+  Node SDK performance, general availability of Automation API, and more.
+
+## 2.11.0 (2021-04-12)
+* Upgrade to pulumi-terraform-bridge v2.23.0
+
+## 2.10.1 (2021-03-23)
+* Upgrade to pulumi-terraform-bridge v2.22.1  
+  **Please Note:** This includes a bug fix to the refresh operation regarding arrays
+
+## 2.10.0 (2021-03-16)
+* Upgrade to v1.16.0 of the Linode Terraform Provider
+* Upgrade to pulumi-terraform-bridge v2.21.0
+* Release macOS arm64 binary
+
+## 2.9.1 (2021-02-16)
+* Upgrade to pulumi-terraform-bridge v2.19.0  
+  **Please Note:** This includes a bug fix that stops mutating resources options in the nodejs provider
+* Avoid storing config from the environment into the state
+
+## 2.9.0 (2021-02-01)
+* Upgrade to v1.14.3 of the Linode Terraform Provider
+* Upgrading pulumi-terraform-bridge to v2.18.1
+
+## 2.8.1 (2021-01-27)
+* Upgrade to v1.14.1 of the Linode Terraform Provider
+
+## 2.8.0 (2021-01-12)
+* Upgrade to v1.14.0 of the Linode Terraform Provider
+* Upgrade to pulumi-terraform-bridge v2.17.0
+* Upgrade to pulumi v2.16.2
+
+## 2.7.3 (2020-11-23)
+* Upgrade to v1.13.4 of the Linode Terraform Provider
+* Upgrade to pulumi-terraform-bridge v2.13.2  
+  * This adds support for import specific examples in documentation
+
+## 2.7.2 (2020-11-09)
+* Upgrade to pulumi-terraform-bridge v2.12.1
+
+## 2.7.1 (2020-10-28)
+* Upgrade to v1.13.3 of the Linode Terraform Provider
+
 ## 2.7.0 (2020-10-26)
 * Upgrade to Pulumi v2.12.0 and pulumi-terraform-bridge v2.11.0
 * Improving the accuracy of previews leading to a more accurate understanding of what will actually change rather than assuming all output properties will change.  

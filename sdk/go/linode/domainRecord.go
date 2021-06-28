@@ -4,10 +4,11 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides a Linode Domain Record resource.  This can be used to create, modify, and delete Linodes Domain Records.
@@ -21,16 +22,16 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
 // 	pulumi.Run(func(ctx *pulumi.Context) error {
 // 		foobarDomain, err := linode.NewDomain(ctx, "foobarDomain", &linode.DomainArgs{
+// 			Type:     pulumi.String("master"),
 // 			Domain:   pulumi.String("foobar.example"),
 // 			SoaEmail: pulumi.String("example@foobar.example"),
-// 			Type:     pulumi.String("master"),
 // 		})
 // 		if err != nil {
 // 			return err
@@ -51,6 +52,16 @@ import (
 // ## Attributes
 //
 // This resource exports no additional attributes.
+//
+// ## Import
+//
+// Linodes Domain Records can be imported using the Linode Domain `id` followed by the Domain Record `id` separated by a comma, e.g.
+//
+// ```sh
+//  $ pulumi import linode:index/domainRecord:DomainRecord www-foobar 1234567,7654321
+// ```
+//
+//  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Domain Records and other Linode resource types.
 type DomainRecord struct {
 	pulumi.CustomResourceState
 
@@ -64,7 +75,7 @@ type DomainRecord struct {
 	Priority pulumi.IntPtrOutput `pulumi:"priority"`
 	// The protocol this Record's service communicates with. Only valid for SRV records.
 	Protocol pulumi.StringPtrOutput `pulumi:"protocol"`
-	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
 	RecordType pulumi.StringOutput `pulumi:"recordType"`
 	// The service this Record identified. Only valid for SRV records.
 	Service pulumi.StringPtrOutput `pulumi:"service"`
@@ -81,17 +92,18 @@ type DomainRecord struct {
 // NewDomainRecord registers a new resource with the given unique name, arguments, and options.
 func NewDomainRecord(ctx *pulumi.Context,
 	name string, args *DomainRecordArgs, opts ...pulumi.ResourceOption) (*DomainRecord, error) {
-	if args == nil || args.DomainId == nil {
-		return nil, errors.New("missing required argument 'DomainId'")
-	}
-	if args == nil || args.RecordType == nil {
-		return nil, errors.New("missing required argument 'RecordType'")
-	}
-	if args == nil || args.Target == nil {
-		return nil, errors.New("missing required argument 'Target'")
-	}
 	if args == nil {
-		args = &DomainRecordArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.DomainId == nil {
+		return nil, errors.New("invalid value for required argument 'DomainId'")
+	}
+	if args.RecordType == nil {
+		return nil, errors.New("invalid value for required argument 'RecordType'")
+	}
+	if args.Target == nil {
+		return nil, errors.New("invalid value for required argument 'Target'")
 	}
 	var resource DomainRecord
 	err := ctx.RegisterResource("linode:index/domainRecord:DomainRecord", name, args, &resource, opts...)
@@ -125,7 +137,7 @@ type domainRecordState struct {
 	Priority *int `pulumi:"priority"`
 	// The protocol this Record's service communicates with. Only valid for SRV records.
 	Protocol *string `pulumi:"protocol"`
-	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
 	RecordType *string `pulumi:"recordType"`
 	// The service this Record identified. Only valid for SRV records.
 	Service *string `pulumi:"service"`
@@ -150,7 +162,7 @@ type DomainRecordState struct {
 	Priority pulumi.IntPtrInput
 	// The protocol this Record's service communicates with. Only valid for SRV records.
 	Protocol pulumi.StringPtrInput
-	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
 	RecordType pulumi.StringPtrInput
 	// The service this Record identified. Only valid for SRV records.
 	Service pulumi.StringPtrInput
@@ -179,7 +191,7 @@ type domainRecordArgs struct {
 	Priority *int `pulumi:"priority"`
 	// The protocol this Record's service communicates with. Only valid for SRV records.
 	Protocol *string `pulumi:"protocol"`
-	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
 	RecordType string `pulumi:"recordType"`
 	// The service this Record identified. Only valid for SRV records.
 	Service *string `pulumi:"service"`
@@ -205,7 +217,7 @@ type DomainRecordArgs struct {
 	Priority pulumi.IntPtrInput
 	// The protocol this Record's service communicates with. Only valid for SRV records.
 	Protocol pulumi.StringPtrInput
-	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. *Changing `recordType` forces the creation of a new Linode Domain Record.*.
+	// The type of Record this is in the DNS system. For example, A records associate a domain name with an IPv4 address, and AAAA records associate a domain name with an IPv6 address. See all supported record types [here](https://www.linode.com/docs/api/domains/#domain-record-create__request-body-schema). *Changing `recordType` forces the creation of a new Linode Domain Record.*.
 	RecordType pulumi.StringInput
 	// The service this Record identified. Only valid for SRV records.
 	Service pulumi.StringPtrInput
@@ -221,4 +233,191 @@ type DomainRecordArgs struct {
 
 func (DomainRecordArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*domainRecordArgs)(nil)).Elem()
+}
+
+type DomainRecordInput interface {
+	pulumi.Input
+
+	ToDomainRecordOutput() DomainRecordOutput
+	ToDomainRecordOutputWithContext(ctx context.Context) DomainRecordOutput
+}
+
+func (*DomainRecord) ElementType() reflect.Type {
+	return reflect.TypeOf((*DomainRecord)(nil))
+}
+
+func (i *DomainRecord) ToDomainRecordOutput() DomainRecordOutput {
+	return i.ToDomainRecordOutputWithContext(context.Background())
+}
+
+func (i *DomainRecord) ToDomainRecordOutputWithContext(ctx context.Context) DomainRecordOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(DomainRecordOutput)
+}
+
+func (i *DomainRecord) ToDomainRecordPtrOutput() DomainRecordPtrOutput {
+	return i.ToDomainRecordPtrOutputWithContext(context.Background())
+}
+
+func (i *DomainRecord) ToDomainRecordPtrOutputWithContext(ctx context.Context) DomainRecordPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(DomainRecordPtrOutput)
+}
+
+type DomainRecordPtrInput interface {
+	pulumi.Input
+
+	ToDomainRecordPtrOutput() DomainRecordPtrOutput
+	ToDomainRecordPtrOutputWithContext(ctx context.Context) DomainRecordPtrOutput
+}
+
+type domainRecordPtrType DomainRecordArgs
+
+func (*domainRecordPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**DomainRecord)(nil))
+}
+
+func (i *domainRecordPtrType) ToDomainRecordPtrOutput() DomainRecordPtrOutput {
+	return i.ToDomainRecordPtrOutputWithContext(context.Background())
+}
+
+func (i *domainRecordPtrType) ToDomainRecordPtrOutputWithContext(ctx context.Context) DomainRecordPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(DomainRecordPtrOutput)
+}
+
+// DomainRecordArrayInput is an input type that accepts DomainRecordArray and DomainRecordArrayOutput values.
+// You can construct a concrete instance of `DomainRecordArrayInput` via:
+//
+//          DomainRecordArray{ DomainRecordArgs{...} }
+type DomainRecordArrayInput interface {
+	pulumi.Input
+
+	ToDomainRecordArrayOutput() DomainRecordArrayOutput
+	ToDomainRecordArrayOutputWithContext(context.Context) DomainRecordArrayOutput
+}
+
+type DomainRecordArray []DomainRecordInput
+
+func (DomainRecordArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*DomainRecord)(nil))
+}
+
+func (i DomainRecordArray) ToDomainRecordArrayOutput() DomainRecordArrayOutput {
+	return i.ToDomainRecordArrayOutputWithContext(context.Background())
+}
+
+func (i DomainRecordArray) ToDomainRecordArrayOutputWithContext(ctx context.Context) DomainRecordArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(DomainRecordArrayOutput)
+}
+
+// DomainRecordMapInput is an input type that accepts DomainRecordMap and DomainRecordMapOutput values.
+// You can construct a concrete instance of `DomainRecordMapInput` via:
+//
+//          DomainRecordMap{ "key": DomainRecordArgs{...} }
+type DomainRecordMapInput interface {
+	pulumi.Input
+
+	ToDomainRecordMapOutput() DomainRecordMapOutput
+	ToDomainRecordMapOutputWithContext(context.Context) DomainRecordMapOutput
+}
+
+type DomainRecordMap map[string]DomainRecordInput
+
+func (DomainRecordMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*DomainRecord)(nil))
+}
+
+func (i DomainRecordMap) ToDomainRecordMapOutput() DomainRecordMapOutput {
+	return i.ToDomainRecordMapOutputWithContext(context.Background())
+}
+
+func (i DomainRecordMap) ToDomainRecordMapOutputWithContext(ctx context.Context) DomainRecordMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(DomainRecordMapOutput)
+}
+
+type DomainRecordOutput struct {
+	*pulumi.OutputState
+}
+
+func (DomainRecordOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*DomainRecord)(nil))
+}
+
+func (o DomainRecordOutput) ToDomainRecordOutput() DomainRecordOutput {
+	return o
+}
+
+func (o DomainRecordOutput) ToDomainRecordOutputWithContext(ctx context.Context) DomainRecordOutput {
+	return o
+}
+
+func (o DomainRecordOutput) ToDomainRecordPtrOutput() DomainRecordPtrOutput {
+	return o.ToDomainRecordPtrOutputWithContext(context.Background())
+}
+
+func (o DomainRecordOutput) ToDomainRecordPtrOutputWithContext(ctx context.Context) DomainRecordPtrOutput {
+	return o.ApplyT(func(v DomainRecord) *DomainRecord {
+		return &v
+	}).(DomainRecordPtrOutput)
+}
+
+type DomainRecordPtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (DomainRecordPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**DomainRecord)(nil))
+}
+
+func (o DomainRecordPtrOutput) ToDomainRecordPtrOutput() DomainRecordPtrOutput {
+	return o
+}
+
+func (o DomainRecordPtrOutput) ToDomainRecordPtrOutputWithContext(ctx context.Context) DomainRecordPtrOutput {
+	return o
+}
+
+type DomainRecordArrayOutput struct{ *pulumi.OutputState }
+
+func (DomainRecordArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]DomainRecord)(nil))
+}
+
+func (o DomainRecordArrayOutput) ToDomainRecordArrayOutput() DomainRecordArrayOutput {
+	return o
+}
+
+func (o DomainRecordArrayOutput) ToDomainRecordArrayOutputWithContext(ctx context.Context) DomainRecordArrayOutput {
+	return o
+}
+
+func (o DomainRecordArrayOutput) Index(i pulumi.IntInput) DomainRecordOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) DomainRecord {
+		return vs[0].([]DomainRecord)[vs[1].(int)]
+	}).(DomainRecordOutput)
+}
+
+type DomainRecordMapOutput struct{ *pulumi.OutputState }
+
+func (DomainRecordMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]DomainRecord)(nil))
+}
+
+func (o DomainRecordMapOutput) ToDomainRecordMapOutput() DomainRecordMapOutput {
+	return o
+}
+
+func (o DomainRecordMapOutput) ToDomainRecordMapOutputWithContext(ctx context.Context) DomainRecordMapOutput {
+	return o
+}
+
+func (o DomainRecordMapOutput) MapIndex(k pulumi.StringInput) DomainRecordOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) DomainRecord {
+		return vs[0].(map[string]DomainRecord)[vs[1].(string)]
+	}).(DomainRecordOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(DomainRecordOutput{})
+	pulumi.RegisterOutputType(DomainRecordPtrOutput{})
+	pulumi.RegisterOutputType(DomainRecordArrayOutput{})
+	pulumi.RegisterOutputType(DomainRecordMapOutput{})
 }

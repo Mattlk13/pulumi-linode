@@ -4,60 +4,17 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides a Linode Image resource.  This can be used to create, modify, and delete Linodes Images.  Linode Images are snapshots of a Linode Instance Disk which can then be used to provision more Linode Instances.  Images can be used across regions.
 //
 // For more information, see [Linode's documentation on Images](https://www.linode.com/docs/platform/disk-images/linode-images/) and the [Linode APIv4 docs](https://developers.linode.com/api/v4#operation/createImage).
 //
-// ## Example Usage
-//
-// The following example shows how one might use this resource to create an Image from a Linode Instance Disk and then deploy a new Linode Instance in another region using that Image.
-//
-// ```go
-// package main
-//
-// import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
-// )
-//
-// func main() {
-// 	pulumi.Run(func(ctx *pulumi.Context) error {
-// 		foo, err := linode.NewInstance(ctx, "foo", &linode.InstanceArgs{
-// 			Region: pulumi.String("us-central"),
-// 			Type:   pulumi.String("g6-nanode-1"),
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
-// 		bar, err := linode.NewImage(ctx, "bar", &linode.ImageArgs{
-// 			Description: pulumi.String("Image taken from foo"),
-// 			DiskId: pulumi.Int(foo.Disks.ApplyT(func(disks []linode.InstanceDisk) (int, error) {
-// 				return disks[0].Id, nil
-// 			}).(pulumi.IntOutput)),
-// 			Label:    pulumi.String("foo-sda-image"),
-// 			LinodeId: foo.ID(),
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
-// 		_, err = linode.NewInstance(ctx, "barBased", &linode.InstanceArgs{
-// 			Image:  bar.ID(),
-// 			Region: pulumi.String("eu-west"),
-// 			Type:   foo.Type,
-// 		})
-// 		if err != nil {
-// 			return err
-// 		}
-// 		return nil
-// 	})
-// }
-// ```
 // ## Attributes
 //
 // This resource exports the following attributes:
@@ -79,6 +36,14 @@ import (
 // * `expiry` - Only Images created automatically (from a deleted Linode; type=automatic) will expire.
 //
 // * `vendor` - The upstream distribution vendor. Nil for private Images.
+//
+// ## Import
+//
+// Linodes Images can be imported using the Linode Image `id`, e.g.
+//
+// ```sh
+//  $ pulumi import linode:index/image:Image myimage 1234567
+// ```
 type Image struct {
 	pulumi.CustomResourceState
 
@@ -91,17 +56,25 @@ type Image struct {
 	// A detailed description of this Image.
 	Description pulumi.StringPtrOutput `pulumi:"description"`
 	// The ID of the Linode Disk that this Image will be created from.
-	DiskId pulumi.IntOutput `pulumi:"diskId"`
+	DiskId pulumi.IntPtrOutput `pulumi:"diskId"`
 	// Only Images created automatically (from a deleted Linode; type=automatic) will expire.
 	Expiry pulumi.StringOutput `pulumi:"expiry"`
+	// The MD5 hash of the file to be uploaded. This is used to trigger file updates.
+	FileHash pulumi.StringOutput `pulumi:"fileHash"`
+	// The path of the image file to be uploaded.
+	FilePath pulumi.StringPtrOutput `pulumi:"filePath"`
 	// True if the Image is public.
 	IsPublic pulumi.BoolOutput `pulumi:"isPublic"`
 	// A short description of the Image. Labels cannot contain special characters.
 	Label pulumi.StringOutput `pulumi:"label"`
 	// The ID of the Linode that this Image will be created from.
-	LinodeId pulumi.IntOutput `pulumi:"linodeId"`
+	LinodeId pulumi.IntPtrOutput `pulumi:"linodeId"`
+	// The region of the image. See all regions [here](https://api.linode.com/v4/regions).
+	Region pulumi.StringPtrOutput `pulumi:"region"`
 	// The minimum size this Image needs to deploy. Size is in MB.
 	Size pulumi.IntOutput `pulumi:"size"`
+	// The current status of this Image.
+	Status pulumi.StringOutput `pulumi:"status"`
 	// How the Image was created. 'Manual' Images can be created at any time. 'Automatic' images are created automatically from
 	// a deleted Linode.
 	Type pulumi.StringOutput `pulumi:"type"`
@@ -112,17 +85,12 @@ type Image struct {
 // NewImage registers a new resource with the given unique name, arguments, and options.
 func NewImage(ctx *pulumi.Context,
 	name string, args *ImageArgs, opts ...pulumi.ResourceOption) (*Image, error) {
-	if args == nil || args.DiskId == nil {
-		return nil, errors.New("missing required argument 'DiskId'")
-	}
-	if args == nil || args.Label == nil {
-		return nil, errors.New("missing required argument 'Label'")
-	}
-	if args == nil || args.LinodeId == nil {
-		return nil, errors.New("missing required argument 'LinodeId'")
-	}
 	if args == nil {
-		args = &ImageArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.Label == nil {
+		return nil, errors.New("invalid value for required argument 'Label'")
 	}
 	var resource Image
 	err := ctx.RegisterResource("linode:index/image:Image", name, args, &resource, opts...)
@@ -158,14 +126,22 @@ type imageState struct {
 	DiskId *int `pulumi:"diskId"`
 	// Only Images created automatically (from a deleted Linode; type=automatic) will expire.
 	Expiry *string `pulumi:"expiry"`
+	// The MD5 hash of the file to be uploaded. This is used to trigger file updates.
+	FileHash *string `pulumi:"fileHash"`
+	// The path of the image file to be uploaded.
+	FilePath *string `pulumi:"filePath"`
 	// True if the Image is public.
 	IsPublic *bool `pulumi:"isPublic"`
 	// A short description of the Image. Labels cannot contain special characters.
 	Label *string `pulumi:"label"`
 	// The ID of the Linode that this Image will be created from.
 	LinodeId *int `pulumi:"linodeId"`
+	// The region of the image. See all regions [here](https://api.linode.com/v4/regions).
+	Region *string `pulumi:"region"`
 	// The minimum size this Image needs to deploy. Size is in MB.
 	Size *int `pulumi:"size"`
+	// The current status of this Image.
+	Status *string `pulumi:"status"`
 	// How the Image was created. 'Manual' Images can be created at any time. 'Automatic' images are created automatically from
 	// a deleted Linode.
 	Type *string `pulumi:"type"`
@@ -186,14 +162,22 @@ type ImageState struct {
 	DiskId pulumi.IntPtrInput
 	// Only Images created automatically (from a deleted Linode; type=automatic) will expire.
 	Expiry pulumi.StringPtrInput
+	// The MD5 hash of the file to be uploaded. This is used to trigger file updates.
+	FileHash pulumi.StringPtrInput
+	// The path of the image file to be uploaded.
+	FilePath pulumi.StringPtrInput
 	// True if the Image is public.
 	IsPublic pulumi.BoolPtrInput
 	// A short description of the Image. Labels cannot contain special characters.
 	Label pulumi.StringPtrInput
 	// The ID of the Linode that this Image will be created from.
 	LinodeId pulumi.IntPtrInput
+	// The region of the image. See all regions [here](https://api.linode.com/v4/regions).
+	Region pulumi.StringPtrInput
 	// The minimum size this Image needs to deploy. Size is in MB.
 	Size pulumi.IntPtrInput
+	// The current status of this Image.
+	Status pulumi.StringPtrInput
 	// How the Image was created. 'Manual' Images can be created at any time. 'Automatic' images are created automatically from
 	// a deleted Linode.
 	Type pulumi.StringPtrInput
@@ -209,11 +193,17 @@ type imageArgs struct {
 	// A detailed description of this Image.
 	Description *string `pulumi:"description"`
 	// The ID of the Linode Disk that this Image will be created from.
-	DiskId int `pulumi:"diskId"`
+	DiskId *int `pulumi:"diskId"`
+	// The MD5 hash of the file to be uploaded. This is used to trigger file updates.
+	FileHash *string `pulumi:"fileHash"`
+	// The path of the image file to be uploaded.
+	FilePath *string `pulumi:"filePath"`
 	// A short description of the Image. Labels cannot contain special characters.
 	Label string `pulumi:"label"`
 	// The ID of the Linode that this Image will be created from.
-	LinodeId int `pulumi:"linodeId"`
+	LinodeId *int `pulumi:"linodeId"`
+	// The region of the image. See all regions [here](https://api.linode.com/v4/regions).
+	Region *string `pulumi:"region"`
 }
 
 // The set of arguments for constructing a Image resource.
@@ -221,13 +211,206 @@ type ImageArgs struct {
 	// A detailed description of this Image.
 	Description pulumi.StringPtrInput
 	// The ID of the Linode Disk that this Image will be created from.
-	DiskId pulumi.IntInput
+	DiskId pulumi.IntPtrInput
+	// The MD5 hash of the file to be uploaded. This is used to trigger file updates.
+	FileHash pulumi.StringPtrInput
+	// The path of the image file to be uploaded.
+	FilePath pulumi.StringPtrInput
 	// A short description of the Image. Labels cannot contain special characters.
 	Label pulumi.StringInput
 	// The ID of the Linode that this Image will be created from.
-	LinodeId pulumi.IntInput
+	LinodeId pulumi.IntPtrInput
+	// The region of the image. See all regions [here](https://api.linode.com/v4/regions).
+	Region pulumi.StringPtrInput
 }
 
 func (ImageArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*imageArgs)(nil)).Elem()
+}
+
+type ImageInput interface {
+	pulumi.Input
+
+	ToImageOutput() ImageOutput
+	ToImageOutputWithContext(ctx context.Context) ImageOutput
+}
+
+func (*Image) ElementType() reflect.Type {
+	return reflect.TypeOf((*Image)(nil))
+}
+
+func (i *Image) ToImageOutput() ImageOutput {
+	return i.ToImageOutputWithContext(context.Background())
+}
+
+func (i *Image) ToImageOutputWithContext(ctx context.Context) ImageOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ImageOutput)
+}
+
+func (i *Image) ToImagePtrOutput() ImagePtrOutput {
+	return i.ToImagePtrOutputWithContext(context.Background())
+}
+
+func (i *Image) ToImagePtrOutputWithContext(ctx context.Context) ImagePtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ImagePtrOutput)
+}
+
+type ImagePtrInput interface {
+	pulumi.Input
+
+	ToImagePtrOutput() ImagePtrOutput
+	ToImagePtrOutputWithContext(ctx context.Context) ImagePtrOutput
+}
+
+type imagePtrType ImageArgs
+
+func (*imagePtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**Image)(nil))
+}
+
+func (i *imagePtrType) ToImagePtrOutput() ImagePtrOutput {
+	return i.ToImagePtrOutputWithContext(context.Background())
+}
+
+func (i *imagePtrType) ToImagePtrOutputWithContext(ctx context.Context) ImagePtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ImagePtrOutput)
+}
+
+// ImageArrayInput is an input type that accepts ImageArray and ImageArrayOutput values.
+// You can construct a concrete instance of `ImageArrayInput` via:
+//
+//          ImageArray{ ImageArgs{...} }
+type ImageArrayInput interface {
+	pulumi.Input
+
+	ToImageArrayOutput() ImageArrayOutput
+	ToImageArrayOutputWithContext(context.Context) ImageArrayOutput
+}
+
+type ImageArray []ImageInput
+
+func (ImageArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*Image)(nil))
+}
+
+func (i ImageArray) ToImageArrayOutput() ImageArrayOutput {
+	return i.ToImageArrayOutputWithContext(context.Background())
+}
+
+func (i ImageArray) ToImageArrayOutputWithContext(ctx context.Context) ImageArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ImageArrayOutput)
+}
+
+// ImageMapInput is an input type that accepts ImageMap and ImageMapOutput values.
+// You can construct a concrete instance of `ImageMapInput` via:
+//
+//          ImageMap{ "key": ImageArgs{...} }
+type ImageMapInput interface {
+	pulumi.Input
+
+	ToImageMapOutput() ImageMapOutput
+	ToImageMapOutputWithContext(context.Context) ImageMapOutput
+}
+
+type ImageMap map[string]ImageInput
+
+func (ImageMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*Image)(nil))
+}
+
+func (i ImageMap) ToImageMapOutput() ImageMapOutput {
+	return i.ToImageMapOutputWithContext(context.Background())
+}
+
+func (i ImageMap) ToImageMapOutputWithContext(ctx context.Context) ImageMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ImageMapOutput)
+}
+
+type ImageOutput struct {
+	*pulumi.OutputState
+}
+
+func (ImageOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*Image)(nil))
+}
+
+func (o ImageOutput) ToImageOutput() ImageOutput {
+	return o
+}
+
+func (o ImageOutput) ToImageOutputWithContext(ctx context.Context) ImageOutput {
+	return o
+}
+
+func (o ImageOutput) ToImagePtrOutput() ImagePtrOutput {
+	return o.ToImagePtrOutputWithContext(context.Background())
+}
+
+func (o ImageOutput) ToImagePtrOutputWithContext(ctx context.Context) ImagePtrOutput {
+	return o.ApplyT(func(v Image) *Image {
+		return &v
+	}).(ImagePtrOutput)
+}
+
+type ImagePtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (ImagePtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**Image)(nil))
+}
+
+func (o ImagePtrOutput) ToImagePtrOutput() ImagePtrOutput {
+	return o
+}
+
+func (o ImagePtrOutput) ToImagePtrOutputWithContext(ctx context.Context) ImagePtrOutput {
+	return o
+}
+
+type ImageArrayOutput struct{ *pulumi.OutputState }
+
+func (ImageArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]Image)(nil))
+}
+
+func (o ImageArrayOutput) ToImageArrayOutput() ImageArrayOutput {
+	return o
+}
+
+func (o ImageArrayOutput) ToImageArrayOutputWithContext(ctx context.Context) ImageArrayOutput {
+	return o
+}
+
+func (o ImageArrayOutput) Index(i pulumi.IntInput) ImageOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) Image {
+		return vs[0].([]Image)[vs[1].(int)]
+	}).(ImageOutput)
+}
+
+type ImageMapOutput struct{ *pulumi.OutputState }
+
+func (ImageMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]Image)(nil))
+}
+
+func (o ImageMapOutput) ToImageMapOutput() ImageMapOutput {
+	return o
+}
+
+func (o ImageMapOutput) ToImageMapOutputWithContext(ctx context.Context) ImageMapOutput {
+	return o
+}
+
+func (o ImageMapOutput) MapIndex(k pulumi.StringInput) ImageOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) Image {
+		return vs[0].(map[string]Image)[vs[1].(string)]
+	}).(ImageOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(ImageOutput{})
+	pulumi.RegisterOutputType(ImagePtrOutput{})
+	pulumi.RegisterOutputType(ImageArrayOutput{})
+	pulumi.RegisterOutputType(ImageMapOutput{})
 }

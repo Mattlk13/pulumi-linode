@@ -15,6 +15,7 @@ namespace Pulumi.Linode
     /// construction to achieve fine-grained programmatic control over provider settings. See the
     /// [documentation](https://www.pulumi.com/docs/reference/programming-model/#providers) for more information.
     /// </summary>
+    [LinodeResourceType("pulumi:providers:linode")]
     public partial class Provider : Pulumi.ProviderResource
     {
         /// <summary>
@@ -24,7 +25,7 @@ namespace Pulumi.Linode
         /// <param name="name">The unique name of the resource</param>
         /// <param name="args">The arguments used to populate this resource's properties</param>
         /// <param name="options">A bag of options that control this resource's behavior</param>
-        public Provider(string name, ProviderArgs? args = null, CustomResourceOptions? options = null)
+        public Provider(string name, ProviderArgs args, CustomResourceOptions? options = null)
             : base("linode", name, args ?? new ProviderArgs(), MakeResourceOptions(options, ""))
         {
         }
@@ -51,10 +52,52 @@ namespace Pulumi.Linode
         public Input<string>? ApiVersion { get; set; }
 
         /// <summary>
+        /// The rate in milliseconds to poll for events.
+        /// </summary>
+        [Input("eventPollMs", json: true)]
+        public Input<int>? EventPollMs { get; set; }
+
+        /// <summary>
+        /// The rate in milliseconds to poll for LKE events.
+        /// </summary>
+        [Input("lkeEventPollMs", json: true)]
+        public Input<int>? LkeEventPollMs { get; set; }
+
+        /// <summary>
+        /// The rate in milliseconds to poll for an LKE node to be ready.
+        /// </summary>
+        [Input("lkeNodeReadyPollMs", json: true)]
+        public Input<int>? LkeNodeReadyPollMs { get; set; }
+
+        /// <summary>
+        /// Maximum delay in milliseconds before retrying a request.
+        /// </summary>
+        [Input("maxRetryDelayMs", json: true)]
+        public Input<int>? MaxRetryDelayMs { get; set; }
+
+        /// <summary>
+        /// Minimum delay in milliseconds before retrying a request.
+        /// </summary>
+        [Input("minRetryDelayMs", json: true)]
+        public Input<int>? MinRetryDelayMs { get; set; }
+
+        /// <summary>
+        /// Skip waiting for a linode_instance resource to finish deleting.
+        /// </summary>
+        [Input("skipInstanceDeletePoll", json: true)]
+        public Input<bool>? SkipInstanceDeletePoll { get; set; }
+
+        /// <summary>
+        /// Skip waiting for a linode_instance resource to be running.
+        /// </summary>
+        [Input("skipInstanceReadyPoll", json: true)]
+        public Input<bool>? SkipInstanceReadyPoll { get; set; }
+
+        /// <summary>
         /// The token that allows you access to your Linode account
         /// </summary>
-        [Input("token")]
-        public Input<string>? Token { get; set; }
+        [Input("token", required: true)]
+        public Input<string> Token { get; set; } = null!;
 
         /// <summary>
         /// An HTTP User-Agent Prefix to prepend in API requests.
@@ -71,7 +114,6 @@ namespace Pulumi.Linode
         public ProviderArgs()
         {
             ApiVersion = Utilities.GetEnv("LINODE_API_VERSION");
-            Token = Utilities.GetEnv("LINODE_TOKEN", "LINODE_API_TOKEN");
             UaPrefix = Utilities.GetEnv("LINODE_UA_PREFIX");
             Url = Utilities.GetEnv("LINODE_URL");
         }

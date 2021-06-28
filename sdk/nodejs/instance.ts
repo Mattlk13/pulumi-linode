@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -40,43 +39,41 @@ import * as utilities from "./utilities";
  * import * as pulumi from "@pulumi/pulumi";
  * import * as linode from "@pulumi/linode";
  *
- * const me = pulumi.output(linode.getProfile({ async: true }));
- * const webVolume = new linode.Volume("web_volume", {
+ * const me = linode.getProfile({});
+ * const webVolume = new linode.Volume("webVolume", {
  *     label: "web_volume",
- *     region: "us-central",
  *     size: 20,
+ *     region: "us-central",
  * });
  * const web = new linode.Instance("web", {
- *     bootConfigLabel: "boot_config",
+ *     label: "complex_instance",
+ *     group: "foo",
+ *     tags: ["foo"],
+ *     region: "us-central",
+ *     type: "g6-nanode-1",
+ *     privateIp: true,
+ *     disks: [{
+ *         label: "boot",
+ *         size: 3000,
+ *         image: "linode/ubuntu18.04",
+ *         authorizedKeys: ["ssh-rsa AAAA...Gw== user@example.local"],
+ *         authorizedUsers: [me.then(me => me.username)],
+ *         rootPass: "terr4form-test",
+ *     }],
  *     configs: [{
+ *         label: "boot_config",
+ *         kernel: "linode/latest-64bit",
  *         devices: {
  *             sda: {
  *                 diskLabel: "boot",
  *             },
  *             sdb: {
- *                 volumeId: webVolume.id.apply(id => Number.parseFloat(id)),
+ *                 volumeId: webVolume.id,
  *             },
  *         },
- *         kernel: "linode/latest-64bit",
- *         label: "boot_config",
  *         rootDevice: "/dev/sda",
  *     }],
- *     disks: [{
- *         // Any of authorized_keys, authorized_users, and root_pass
- *         // can be used for provisioning.
- *         authorizedKeys: ["ssh-rsa AAAA...Gw== user@example.local"],
- *         authorizedUsers: [me.username],
- *         image: "linode/ubuntu18.04",
- *         label: "boot",
- *         rootPass: "terr4form-test",
- *         size: 3000,
- *     }],
- *     group: "foo",
- *     label: "complex_instance",
- *     privateIp: true,
- *     region: "us-central",
- *     tags: ["foo"],
- *     type: "g6-nanode-1",
+ *     bootConfigLabel: "boot_config",
  * });
  * ```
  * ## Attributes
@@ -110,6 +107,20 @@ import * as utilities from "./utilities";
  *     * `day` -  The day of the week that your Linode's weekly Backup is taken. If not set manually, a day will be chosen for you. Backups are taken every day, but backups taken on this day are preferred when selecting backups to retain for a longer period.  If not set manually, then when backups are initially enabled, this may come back as "Scheduling" until the day is automatically selected.
  *     
  *     * `window` - The window ('W0'-'W22') in which your backups will be taken, in UTC. A backups window is a two-hour span of time in which the backup may occur. For example, 'W10' indicates that your backups should be taken between 10:00 and 12:00. If you do not choose a backup window, one will be selected for you automatically.  If not set manually, when backups are initially enabled this may come back as Scheduling until the window is automatically selected.
+ *
+ * ## Import
+ *
+ * Linodes Instances can be imported using the Linode `id`, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/instance:Instance mylinode 1234567
+ * ```
+ *
+ *  When importing an instance, all `disk` and `config` values must be represented. Imported disks must include their `label` value.
+ *
+ * **Any disk that is not precisely represented may be removed resulting in data loss.** Imported configs should include all `devices`, and must include `label`, `kernel`, and the `root_device`.
+ *
+ * The instance must include a `boot_config_label` referring to the correct configuration profile. The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Instances and other Linode resource types.
  */
 export class Instance extends pulumi.CustomResource {
     /**
@@ -139,6 +150,9 @@ export class Instance extends pulumi.CustomResource {
         return obj['__pulumiType'] === Instance.__pulumiType;
     }
 
+    /**
+     * Configuration options for alert triggers on this Linode.
+     */
     public readonly alerts!: pulumi.Output<outputs.InstanceAlerts>;
     /**
      * A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
@@ -178,6 +192,11 @@ export class Instance extends pulumi.CustomResource {
      */
     public readonly image!: pulumi.Output<string | undefined>;
     /**
+     * An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+     * must be declared in the config block.
+     */
+    public readonly interfaces!: pulumi.Output<outputs.InstanceInterface[] | undefined>;
+    /**
      * This Linode's Public IPv4 Address. If there are multiple public IPv4 addresses on this Instance, an arbitrary address
      * will be used for this field.
      */
@@ -192,7 +211,7 @@ export class Instance extends pulumi.CustomResource {
      */
     public /*out*/ readonly ipv6!: pulumi.Output<string>;
     /**
-     * The Config's label for display purposes.  Also used by `bootConfigLabel`.
+     * The name of this interface. If the interface is a VLAN, a label is required.
      */
     public readonly label!: pulumi.Output<string>;
     /**
@@ -212,6 +231,9 @@ export class Instance extends pulumi.CustomResource {
      * The initial password for the `root` user account. *This value can not be imported.* *Changing `rootPass` forces the creation of a new Linode Instance.* *If omitted, a random password will be generated but will not be stored in state.*
      */
     public readonly rootPass!: pulumi.Output<string | undefined>;
+    /**
+     * Information about the resources available to this Linode.
+     */
     public /*out*/ readonly specs!: pulumi.Output<outputs.InstanceSpecs>;
     /**
      * An object containing responses to any User Defined Fields present in the StackScript being deployed to this Linode. Only accepted if 'stackscript_id' is given. The required values depend on the StackScript being deployed.  *This value can not be imported.* *Changing `stackscriptData` forces the creation of a new Linode Instance.*
@@ -252,7 +274,8 @@ export class Instance extends pulumi.CustomResource {
     constructor(name: string, args: InstanceArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: InstanceArgs | InstanceState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as InstanceState | undefined;
             inputs["alerts"] = state ? state.alerts : undefined;
             inputs["authorizedKeys"] = state ? state.authorizedKeys : undefined;
@@ -265,6 +288,7 @@ export class Instance extends pulumi.CustomResource {
             inputs["disks"] = state ? state.disks : undefined;
             inputs["group"] = state ? state.group : undefined;
             inputs["image"] = state ? state.image : undefined;
+            inputs["interfaces"] = state ? state.interfaces : undefined;
             inputs["ipAddress"] = state ? state.ipAddress : undefined;
             inputs["ipv4s"] = state ? state.ipv4s : undefined;
             inputs["ipv6"] = state ? state.ipv6 : undefined;
@@ -283,7 +307,7 @@ export class Instance extends pulumi.CustomResource {
             inputs["watchdogEnabled"] = state ? state.watchdogEnabled : undefined;
         } else {
             const args = argsOrState as InstanceArgs | undefined;
-            if (!args || args.region === undefined) {
+            if ((!args || args.region === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'region'");
             }
             inputs["alerts"] = args ? args.alerts : undefined;
@@ -296,6 +320,7 @@ export class Instance extends pulumi.CustomResource {
             inputs["disks"] = args ? args.disks : undefined;
             inputs["group"] = args ? args.group : undefined;
             inputs["image"] = args ? args.image : undefined;
+            inputs["interfaces"] = args ? args.interfaces : undefined;
             inputs["label"] = args ? args.label : undefined;
             inputs["privateIp"] = args ? args.privateIp : undefined;
             inputs["region"] = args ? args.region : undefined;
@@ -314,12 +339,8 @@ export class Instance extends pulumi.CustomResource {
             inputs["specs"] = undefined /*out*/;
             inputs["status"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(Instance.__pulumiType, name, inputs, opts);
     }
@@ -329,6 +350,9 @@ export class Instance extends pulumi.CustomResource {
  * Input properties used for looking up and filtering Instance resources.
  */
 export interface InstanceState {
+    /**
+     * Configuration options for alert triggers on this Linode.
+     */
     readonly alerts?: pulumi.Input<inputs.InstanceAlerts>;
     /**
      * A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
@@ -368,6 +392,11 @@ export interface InstanceState {
      */
     readonly image?: pulumi.Input<string>;
     /**
+     * An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+     * must be declared in the config block.
+     */
+    readonly interfaces?: pulumi.Input<pulumi.Input<inputs.InstanceInterface>[]>;
+    /**
      * This Linode's Public IPv4 Address. If there are multiple public IPv4 addresses on this Instance, an arbitrary address
      * will be used for this field.
      */
@@ -382,7 +411,7 @@ export interface InstanceState {
      */
     readonly ipv6?: pulumi.Input<string>;
     /**
-     * The Config's label for display purposes.  Also used by `bootConfigLabel`.
+     * The name of this interface. If the interface is a VLAN, a label is required.
      */
     readonly label?: pulumi.Input<string>;
     /**
@@ -402,6 +431,9 @@ export interface InstanceState {
      * The initial password for the `root` user account. *This value can not be imported.* *Changing `rootPass` forces the creation of a new Linode Instance.* *If omitted, a random password will be generated but will not be stored in state.*
      */
     readonly rootPass?: pulumi.Input<string>;
+    /**
+     * Information about the resources available to this Linode.
+     */
     readonly specs?: pulumi.Input<inputs.InstanceSpecs>;
     /**
      * An object containing responses to any User Defined Fields present in the StackScript being deployed to this Linode. Only accepted if 'stackscript_id' is given. The required values depend on the StackScript being deployed.  *This value can not be imported.* *Changing `stackscriptData` forces the creation of a new Linode Instance.*
@@ -437,6 +469,9 @@ export interface InstanceState {
  * The set of arguments for constructing a Instance resource.
  */
 export interface InstanceArgs {
+    /**
+     * Configuration options for alert triggers on this Linode.
+     */
     readonly alerts?: pulumi.Input<inputs.InstanceAlerts>;
     /**
      * A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
@@ -472,7 +507,12 @@ export interface InstanceArgs {
      */
     readonly image?: pulumi.Input<string>;
     /**
-     * The Config's label for display purposes.  Also used by `bootConfigLabel`.
+     * An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+     * must be declared in the config block.
+     */
+    readonly interfaces?: pulumi.Input<pulumi.Input<inputs.InstanceInterface>[]>;
+    /**
+     * The name of this interface. If the interface is a VLAN, a label is required.
      */
     readonly label?: pulumi.Input<string>;
     /**

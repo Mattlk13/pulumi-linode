@@ -14,9 +14,44 @@ namespace Pulumi.Linode
         public static string? ApiVersion { get; set; } = __config.Get("apiVersion") ?? Utilities.GetEnv("LINODE_API_VERSION");
 
         /// <summary>
+        /// The rate in milliseconds to poll for events.
+        /// </summary>
+        public static int? EventPollMs { get; set; } = __config.GetInt32("eventPollMs");
+
+        /// <summary>
+        /// The rate in milliseconds to poll for LKE events.
+        /// </summary>
+        public static int? LkeEventPollMs { get; set; } = __config.GetInt32("lkeEventPollMs");
+
+        /// <summary>
+        /// The rate in milliseconds to poll for an LKE node to be ready.
+        /// </summary>
+        public static int? LkeNodeReadyPollMs { get; set; } = __config.GetInt32("lkeNodeReadyPollMs");
+
+        /// <summary>
+        /// Maximum delay in milliseconds before retrying a request.
+        /// </summary>
+        public static int? MaxRetryDelayMs { get; set; } = __config.GetInt32("maxRetryDelayMs");
+
+        /// <summary>
+        /// Minimum delay in milliseconds before retrying a request.
+        /// </summary>
+        public static int? MinRetryDelayMs { get; set; } = __config.GetInt32("minRetryDelayMs");
+
+        /// <summary>
+        /// Skip waiting for a linode_instance resource to finish deleting.
+        /// </summary>
+        public static bool? SkipInstanceDeletePoll { get; set; } = __config.GetBoolean("skipInstanceDeletePoll");
+
+        /// <summary>
+        /// Skip waiting for a linode_instance resource to be running.
+        /// </summary>
+        public static bool? SkipInstanceReadyPoll { get; set; } = __config.GetBoolean("skipInstanceReadyPoll");
+
+        /// <summary>
         /// The token that allows you access to your Linode account
         /// </summary>
-        public static string? Token { get; set; } = __config.Get("token") ?? Utilities.GetEnv("LINODE_TOKEN", "LINODE_API_TOKEN");
+        public static string? Token { get; set; } = __config.Get("token");
 
         /// <summary>
         /// An HTTP User-Agent Prefix to prepend in API requests.

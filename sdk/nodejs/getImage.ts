@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -39,7 +38,9 @@ import * as utilities from "./utilities";
  *
  * * `size` - The minimum size this Image needs to deploy. Size is in MB. example: 2500
  *
- * * `type` - How the Image was created. Manual Images can be created at any time. image"Automatic" Images are created automatically from a deleted Linode.
+ * * `status` - The current status of this image. (`creating`, `pendingUpload`, `available`)
+ *
+ * * `type` - How the Image was created. Manual Images can be created at any time. "Automatic" Images are created automatically from a deleted Linode. (`manual`, `automatic`)
  *
  * * `vendor` - The upstream distribution vendor. `None` for private Images.
  */
@@ -79,6 +80,7 @@ export interface GetImageResult {
     readonly isPublic: boolean;
     readonly label: string;
     readonly size: number;
+    readonly status: string;
     readonly type: string;
     readonly vendor: string;
 }

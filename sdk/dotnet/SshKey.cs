@@ -18,7 +18,16 @@ namespace Pulumi.Linode
     /// This resource exports the following attributes:
     /// 
     /// * `created` - The date this SSH Key was created.
+    /// 
+    /// ## Import
+    /// 
+    /// Linodes SSH Keys can be imported using the Linode SSH Key `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/sshKey:SshKey mysshkey 1234567
+    /// ```
     /// </summary>
+    [LinodeResourceType("linode:index/sshKey:SshKey")]
     public partial class SshKey : Pulumi.CustomResource
     {
         /// <summary>

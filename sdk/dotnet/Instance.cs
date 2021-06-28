@@ -65,16 +65,44 @@ namespace Pulumi.Linode
     ///         var webVolume = new Linode.Volume("webVolume", new Linode.VolumeArgs
     ///         {
     ///             Label = "web_volume",
-    ///             Region = "us-central",
     ///             Size = 20,
+    ///             Region = "us-central",
     ///         });
     ///         var web = new Linode.Instance("web", new Linode.InstanceArgs
     ///         {
-    ///             BootConfigLabel = "boot_config",
+    ///             Label = "complex_instance",
+    ///             Group = "foo",
+    ///             Tags = 
+    ///             {
+    ///                 "foo",
+    ///             },
+    ///             Region = "us-central",
+    ///             Type = "g6-nanode-1",
+    ///             PrivateIp = true,
+    ///             Disks = 
+    ///             {
+    ///                 new Linode.Inputs.InstanceDiskArgs
+    ///                 {
+    ///                     Label = "boot",
+    ///                     Size = 3000,
+    ///                     Image = "linode/ubuntu18.04",
+    ///                     AuthorizedKeys = 
+    ///                     {
+    ///                         "ssh-rsa AAAA...Gw== user@example.local",
+    ///                     },
+    ///                     AuthorizedUsers = 
+    ///                     {
+    ///                         me.Apply(me =&gt; me.Username),
+    ///                     },
+    ///                     RootPass = "terr4form-test",
+    ///                 },
+    ///             },
     ///             Configs = 
     ///             {
     ///                 new Linode.Inputs.InstanceConfigArgs
     ///                 {
+    ///                     Label = "boot_config",
+    ///                     Kernel = "linode/latest-64bit",
     ///                     Devices = new Linode.Inputs.InstanceConfigDevicesArgs
     ///                     {
     ///                         Sda = new Linode.Inputs.InstanceConfigDevicesSdaArgs
@@ -86,38 +114,10 @@ namespace Pulumi.Linode
     ///                             VolumeId = webVolume.Id,
     ///                         },
     ///                     },
-    ///                     Kernel = "linode/latest-64bit",
-    ///                     Label = "boot_config",
     ///                     RootDevice = "/dev/sda",
     ///                 },
     ///             },
-    ///             Disks = 
-    ///             {
-    ///                 new Linode.Inputs.InstanceDiskArgs
-    ///                 {
-    ///                     AuthorizedKeys = 
-    ///                     {
-    ///                         "ssh-rsa AAAA...Gw== user@example.local",
-    ///                     },
-    ///                     AuthorizedUsers = 
-    ///                     {
-    ///                         me.Apply(me =&gt; me.Username),
-    ///                     },
-    ///                     Image = "linode/ubuntu18.04",
-    ///                     Label = "boot",
-    ///                     RootPass = "terr4form-test",
-    ///                     Size = 3000,
-    ///                 },
-    ///             },
-    ///             Group = "foo",
-    ///             Label = "complex_instance",
-    ///             PrivateIp = true,
-    ///             Region = "us-central",
-    ///             Tags = 
-    ///             {
-    ///                 "foo",
-    ///             },
-    ///             Type = "g6-nanode-1",
+    ///             BootConfigLabel = "boot_config",
     ///         });
     ///     }
     /// 
@@ -154,9 +154,27 @@ namespace Pulumi.Linode
     ///     * `day` -  The day of the week that your Linode's weekly Backup is taken. If not set manually, a day will be chosen for you. Backups are taken every day, but backups taken on this day are preferred when selecting backups to retain for a longer period.  If not set manually, then when backups are initially enabled, this may come back as "Scheduling" until the day is automatically selected.
     ///     
     ///     * `window` - The window ('W0'-'W22') in which your backups will be taken, in UTC. A backups window is a two-hour span of time in which the backup may occur. For example, 'W10' indicates that your backups should be taken between 10:00 and 12:00. If you do not choose a backup window, one will be selected for you automatically.  If not set manually, when backups are initially enabled this may come back as Scheduling until the window is automatically selected.
+    /// 
+    /// ## Import
+    /// 
+    /// Linodes Instances can be imported using the Linode `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/instance:Instance mylinode 1234567
+    /// ```
+    /// 
+    ///  When importing an instance, all `disk` and `config` values must be represented. Imported disks must include their `label` value.
+    /// 
+    /// **Any disk that is not precisely represented may be removed resulting in data loss.** Imported configs should include all `devices`, and must include `label`, `kernel`, and the `root_device`.
+    /// 
+    /// The instance must include a `boot_config_label` referring to the correct configuration profile. The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Instances and other Linode resource types.
     /// </summary>
+    [LinodeResourceType("linode:index/instance:Instance")]
     public partial class Instance : Pulumi.CustomResource
     {
+        /// <summary>
+        /// Configuration options for alert triggers on this Linode.
+        /// </summary>
         [Output("alerts")]
         public Output<Outputs.InstanceAlerts> Alerts { get; private set; } = null!;
 
@@ -218,6 +236,13 @@ namespace Pulumi.Linode
         public Output<string?> Image { get; private set; } = null!;
 
         /// <summary>
+        /// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+        /// must be declared in the config block.
+        /// </summary>
+        [Output("interfaces")]
+        public Output<ImmutableArray<Outputs.InstanceInterface>> Interfaces { get; private set; } = null!;
+
+        /// <summary>
         /// This Linode's Public IPv4 Address. If there are multiple public IPv4 addresses on this Instance, an arbitrary address
         /// will be used for this field.
         /// </summary>
@@ -238,7 +263,7 @@ namespace Pulumi.Linode
         public Output<string> Ipv6 { get; private set; } = null!;
 
         /// <summary>
-        /// The Config's label for display purposes.  Also used by `boot_config_label`.
+        /// The name of this interface. If the interface is a VLAN, a label is required.
         /// </summary>
         [Output("label")]
         public Output<string> Label { get; private set; } = null!;
@@ -268,6 +293,9 @@ namespace Pulumi.Linode
         [Output("rootPass")]
         public Output<string?> RootPass { get; private set; } = null!;
 
+        /// <summary>
+        /// Information about the resources available to this Linode.
+        /// </summary>
         [Output("specs")]
         public Output<Outputs.InstanceSpecs> Specs { get; private set; } = null!;
 
@@ -359,6 +387,9 @@ namespace Pulumi.Linode
 
     public sealed class InstanceArgs : Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// Configuration options for alert triggers on this Linode.
+        /// </summary>
         [Input("alerts")]
         public Input<Inputs.InstanceAlertsArgs>? Alerts { get; set; }
 
@@ -436,8 +467,21 @@ namespace Pulumi.Linode
         [Input("image")]
         public Input<string>? Image { get; set; }
 
+        [Input("interfaces")]
+        private InputList<Inputs.InstanceInterfaceArgs>? _interfaces;
+
         /// <summary>
-        /// The Config's label for display purposes.  Also used by `boot_config_label`.
+        /// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+        /// must be declared in the config block.
+        /// </summary>
+        public InputList<Inputs.InstanceInterfaceArgs> Interfaces
+        {
+            get => _interfaces ?? (_interfaces = new InputList<Inputs.InstanceInterfaceArgs>());
+            set => _interfaces = value;
+        }
+
+        /// <summary>
+        /// The name of this interface. If the interface is a VLAN, a label is required.
         /// </summary>
         [Input("label")]
         public Input<string>? Label { get; set; }
@@ -515,6 +559,9 @@ namespace Pulumi.Linode
 
     public sealed class InstanceState : Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// Configuration options for alert triggers on this Linode.
+        /// </summary>
         [Input("alerts")]
         public Input<Inputs.InstanceAlertsGetArgs>? Alerts { get; set; }
 
@@ -598,6 +645,19 @@ namespace Pulumi.Linode
         [Input("image")]
         public Input<string>? Image { get; set; }
 
+        [Input("interfaces")]
+        private InputList<Inputs.InstanceInterfaceGetArgs>? _interfaces;
+
+        /// <summary>
+        /// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+        /// must be declared in the config block.
+        /// </summary>
+        public InputList<Inputs.InstanceInterfaceGetArgs> Interfaces
+        {
+            get => _interfaces ?? (_interfaces = new InputList<Inputs.InstanceInterfaceGetArgs>());
+            set => _interfaces = value;
+        }
+
         /// <summary>
         /// This Linode's Public IPv4 Address. If there are multiple public IPv4 addresses on this Instance, an arbitrary address
         /// will be used for this field.
@@ -625,7 +685,7 @@ namespace Pulumi.Linode
         public Input<string>? Ipv6 { get; set; }
 
         /// <summary>
-        /// The Config's label for display purposes.  Also used by `boot_config_label`.
+        /// The name of this interface. If the interface is a VLAN, a label is required.
         /// </summary>
         [Input("label")]
         public Input<string>? Label { get; set; }
@@ -655,6 +715,9 @@ namespace Pulumi.Linode
         [Input("rootPass")]
         public Input<string>? RootPass { get; set; }
 
+        /// <summary>
+        /// Information about the resources available to this Linode.
+        /// </summary>
         [Input("specs")]
         public Input<Inputs.InstanceSpecsGetArgs>? Specs { get; set; }
 

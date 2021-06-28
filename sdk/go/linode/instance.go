@@ -4,10 +4,11 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides a Linode Instance resource.  This can be used to create, modify, and delete Linodes.
@@ -22,8 +23,8 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -59,8 +60,8 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -71,16 +72,39 @@ import (
 // 		}
 // 		webVolume, err := linode.NewVolume(ctx, "webVolume", &linode.VolumeArgs{
 // 			Label:  pulumi.String("web_volume"),
-// 			Region: pulumi.String("us-central"),
 // 			Size:   pulumi.Int(20),
+// 			Region: pulumi.String("us-central"),
 // 		})
 // 		if err != nil {
 // 			return err
 // 		}
 // 		_, err = linode.NewInstance(ctx, "web", &linode.InstanceArgs{
-// 			BootConfigLabel: pulumi.String("boot_config"),
+// 			Label: pulumi.String("complex_instance"),
+// 			Group: pulumi.String("foo"),
+// 			Tags: pulumi.StringArray{
+// 				pulumi.String("foo"),
+// 			},
+// 			Region:    pulumi.String("us-central"),
+// 			Type:      pulumi.String("g6-nanode-1"),
+// 			PrivateIp: pulumi.Bool(true),
+// 			Disks: linode.InstanceDiskArray{
+// 				&linode.InstanceDiskArgs{
+// 					Label: pulumi.String("boot"),
+// 					Size:  pulumi.Int(3000),
+// 					Image: pulumi.String("linode/ubuntu18.04"),
+// 					AuthorizedKeys: pulumi.StringArray{
+// 						pulumi.String("ssh-rsa AAAA...Gw== user@example.local"),
+// 					},
+// 					AuthorizedUsers: pulumi.StringArray{
+// 						pulumi.String(me.Username),
+// 					},
+// 					RootPass: pulumi.String("terr4form-test"),
+// 				},
+// 			},
 // 			Configs: linode.InstanceConfigArray{
 // 				&linode.InstanceConfigArgs{
+// 					Label:  pulumi.String("boot_config"),
+// 					Kernel: pulumi.String("linode/latest-64bit"),
 // 					Devices: &linode.InstanceConfigDevicesArgs{
 // 						Sda: &linode.InstanceConfigDevicesSdaArgs{
 // 							DiskLabel: pulumi.String("boot"),
@@ -89,33 +113,10 @@ import (
 // 							VolumeId: webVolume.ID(),
 // 						},
 // 					},
-// 					Kernel:     pulumi.String("linode/latest-64bit"),
-// 					Label:      pulumi.String("boot_config"),
 // 					RootDevice: pulumi.String("/dev/sda"),
 // 				},
 // 			},
-// 			Disks: linode.InstanceDiskArray{
-// 				&linode.InstanceDiskArgs{
-// 					AuthorizedKeys: pulumi.StringArray{
-// 						pulumi.String("ssh-rsa AAAA...Gw== user@example.local"),
-// 					},
-// 					AuthorizedUsers: pulumi.StringArray{
-// 						pulumi.String(me.Username),
-// 					},
-// 					Image:    pulumi.String("linode/ubuntu18.04"),
-// 					Label:    pulumi.String("boot"),
-// 					RootPass: pulumi.String("terr4form-test"),
-// 					Size:     pulumi.Int(3000),
-// 				},
-// 			},
-// 			Group:     pulumi.String("foo"),
-// 			Label:     pulumi.String("complex_instance"),
-// 			PrivateIp: pulumi.Bool(true),
-// 			Region:    pulumi.String("us-central"),
-// 			Tags: pulumi.StringArray{
-// 				pulumi.String("foo"),
-// 			},
-// 			Type: pulumi.String("g6-nanode-1"),
+// 			BootConfigLabel: pulumi.String("boot_config"),
 // 		})
 // 		if err != nil {
 // 			return err
@@ -155,9 +156,24 @@ import (
 //     * `day` -  The day of the week that your Linode's weekly Backup is taken. If not set manually, a day will be chosen for you. Backups are taken every day, but backups taken on this day are preferred when selecting backups to retain for a longer period.  If not set manually, then when backups are initially enabled, this may come back as "Scheduling" until the day is automatically selected.
 //
 //     * `window` - The window ('W0'-'W22') in which your backups will be taken, in UTC. A backups window is a two-hour span of time in which the backup may occur. For example, 'W10' indicates that your backups should be taken between 10:00 and 12:00. If you do not choose a backup window, one will be selected for you automatically.  If not set manually, when backups are initially enabled this may come back as Scheduling until the window is automatically selected.
+//
+// ## Import
+//
+// Linodes Instances can be imported using the Linode `id`, e.g.
+//
+// ```sh
+//  $ pulumi import linode:index/instance:Instance mylinode 1234567
+// ```
+//
+//  When importing an instance, all `disk` and `config` values must be represented. Imported disks must include their `label` value.
+//
+// **Any disk that is not precisely represented may be removed resulting in data loss.** Imported configs should include all `devices`, and must include `label`, `kernel`, and the `root_device`.
+//
+// The instance must include a `boot_config_label` referring to the correct configuration profile. The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Instances and other Linode resource types.
 type Instance struct {
 	pulumi.CustomResourceState
 
+	// Configuration options for alert triggers on this Linode.
 	Alerts InstanceAlertsOutput `pulumi:"alerts"`
 	// A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
 	AuthorizedKeys pulumi.StringArrayOutput `pulumi:"authorizedKeys"`
@@ -178,6 +194,9 @@ type Instance struct {
 	Group pulumi.StringPtrOutput `pulumi:"group"`
 	// An Image ID to deploy the Disk from. Official Linode Images start with linode/, while your Images start with private/. See /images for more information on the Images available for you to use. Examples are `linode/debian9`, `linode/fedora28`, `linode/ubuntu16.04lts`, `linode/arch`, and `private/12345`. See all images [here](https://api.linode.com/v4/linode/kernels). *Changing `image` forces the creation of a new Linode Instance.*
 	Image pulumi.StringPtrOutput `pulumi:"image"`
+	// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+	// must be declared in the config block.
+	Interfaces InstanceInterfaceArrayOutput `pulumi:"interfaces"`
 	// This Linode's Public IPv4 Address. If there are multiple public IPv4 addresses on this Instance, an arbitrary address
 	// will be used for this field.
 	IpAddress pulumi.StringOutput `pulumi:"ipAddress"`
@@ -186,7 +205,7 @@ type Instance struct {
 	Ipv4s pulumi.StringArrayOutput `pulumi:"ipv4s"`
 	// This Linode's IPv6 SLAAC addresses. This address is specific to a Linode, and may not be shared.
 	Ipv6 pulumi.StringOutput `pulumi:"ipv6"`
-	// The Config's label for display purposes.  Also used by `bootConfigLabel`.
+	// The name of this interface. If the interface is a VLAN, a label is required.
 	Label pulumi.StringOutput `pulumi:"label"`
 	// If true, the created Linode will have private networking enabled, allowing use of the 192.168.128.0/17 network within the Linode's region. It can be enabled on an existing Linode but it can't be disabled.
 	PrivateIp pulumi.BoolPtrOutput `pulumi:"privateIp"`
@@ -197,7 +216,8 @@ type Instance struct {
 	Region pulumi.StringOutput `pulumi:"region"`
 	// The initial password for the `root` user account. *This value can not be imported.* *Changing `rootPass` forces the creation of a new Linode Instance.* *If omitted, a random password will be generated but will not be stored in state.*
 	RootPass pulumi.StringPtrOutput `pulumi:"rootPass"`
-	Specs    InstanceSpecsOutput    `pulumi:"specs"`
+	// Information about the resources available to this Linode.
+	Specs InstanceSpecsOutput `pulumi:"specs"`
 	// An object containing responses to any User Defined Fields present in the StackScript being deployed to this Linode. Only accepted if 'stackscript_id' is given. The required values depend on the StackScript being deployed.  *This value can not be imported.* *Changing `stackscriptData` forces the creation of a new Linode Instance.*
 	StackscriptData pulumi.MapOutput `pulumi:"stackscriptData"`
 	// The StackScript to deploy to the newly created Linode. If provided, 'image' must also be provided, and must be an Image that is compatible with this StackScript. *This value can not be imported.* *Changing `stackscriptId` forces the creation of a new Linode Instance.*
@@ -217,11 +237,12 @@ type Instance struct {
 // NewInstance registers a new resource with the given unique name, arguments, and options.
 func NewInstance(ctx *pulumi.Context,
 	name string, args *InstanceArgs, opts ...pulumi.ResourceOption) (*Instance, error) {
-	if args == nil || args.Region == nil {
-		return nil, errors.New("missing required argument 'Region'")
-	}
 	if args == nil {
-		args = &InstanceArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.Region == nil {
+		return nil, errors.New("invalid value for required argument 'Region'")
 	}
 	var resource Instance
 	err := ctx.RegisterResource("linode:index/instance:Instance", name, args, &resource, opts...)
@@ -245,6 +266,7 @@ func GetInstance(ctx *pulumi.Context,
 
 // Input properties used for looking up and filtering Instance resources.
 type instanceState struct {
+	// Configuration options for alert triggers on this Linode.
 	Alerts *InstanceAlerts `pulumi:"alerts"`
 	// A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
 	AuthorizedKeys []string `pulumi:"authorizedKeys"`
@@ -265,6 +287,9 @@ type instanceState struct {
 	Group *string `pulumi:"group"`
 	// An Image ID to deploy the Disk from. Official Linode Images start with linode/, while your Images start with private/. See /images for more information on the Images available for you to use. Examples are `linode/debian9`, `linode/fedora28`, `linode/ubuntu16.04lts`, `linode/arch`, and `private/12345`. See all images [here](https://api.linode.com/v4/linode/kernels). *Changing `image` forces the creation of a new Linode Instance.*
 	Image *string `pulumi:"image"`
+	// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+	// must be declared in the config block.
+	Interfaces []InstanceInterface `pulumi:"interfaces"`
 	// This Linode's Public IPv4 Address. If there are multiple public IPv4 addresses on this Instance, an arbitrary address
 	// will be used for this field.
 	IpAddress *string `pulumi:"ipAddress"`
@@ -273,7 +298,7 @@ type instanceState struct {
 	Ipv4s []string `pulumi:"ipv4s"`
 	// This Linode's IPv6 SLAAC addresses. This address is specific to a Linode, and may not be shared.
 	Ipv6 *string `pulumi:"ipv6"`
-	// The Config's label for display purposes.  Also used by `bootConfigLabel`.
+	// The name of this interface. If the interface is a VLAN, a label is required.
 	Label *string `pulumi:"label"`
 	// If true, the created Linode will have private networking enabled, allowing use of the 192.168.128.0/17 network within the Linode's region. It can be enabled on an existing Linode but it can't be disabled.
 	PrivateIp *bool `pulumi:"privateIp"`
@@ -283,8 +308,9 @@ type instanceState struct {
 	// This is the location where the Linode is deployed. Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions). *Changing `region` forces the creation of a new Linode Instance.*.
 	Region *string `pulumi:"region"`
 	// The initial password for the `root` user account. *This value can not be imported.* *Changing `rootPass` forces the creation of a new Linode Instance.* *If omitted, a random password will be generated but will not be stored in state.*
-	RootPass *string        `pulumi:"rootPass"`
-	Specs    *InstanceSpecs `pulumi:"specs"`
+	RootPass *string `pulumi:"rootPass"`
+	// Information about the resources available to this Linode.
+	Specs *InstanceSpecs `pulumi:"specs"`
 	// An object containing responses to any User Defined Fields present in the StackScript being deployed to this Linode. Only accepted if 'stackscript_id' is given. The required values depend on the StackScript being deployed.  *This value can not be imported.* *Changing `stackscriptData` forces the creation of a new Linode Instance.*
 	StackscriptData map[string]interface{} `pulumi:"stackscriptData"`
 	// The StackScript to deploy to the newly created Linode. If provided, 'image' must also be provided, and must be an Image that is compatible with this StackScript. *This value can not be imported.* *Changing `stackscriptId` forces the creation of a new Linode Instance.*
@@ -302,6 +328,7 @@ type instanceState struct {
 }
 
 type InstanceState struct {
+	// Configuration options for alert triggers on this Linode.
 	Alerts InstanceAlertsPtrInput
 	// A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
 	AuthorizedKeys pulumi.StringArrayInput
@@ -322,6 +349,9 @@ type InstanceState struct {
 	Group pulumi.StringPtrInput
 	// An Image ID to deploy the Disk from. Official Linode Images start with linode/, while your Images start with private/. See /images for more information on the Images available for you to use. Examples are `linode/debian9`, `linode/fedora28`, `linode/ubuntu16.04lts`, `linode/arch`, and `private/12345`. See all images [here](https://api.linode.com/v4/linode/kernels). *Changing `image` forces the creation of a new Linode Instance.*
 	Image pulumi.StringPtrInput
+	// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+	// must be declared in the config block.
+	Interfaces InstanceInterfaceArrayInput
 	// This Linode's Public IPv4 Address. If there are multiple public IPv4 addresses on this Instance, an arbitrary address
 	// will be used for this field.
 	IpAddress pulumi.StringPtrInput
@@ -330,7 +360,7 @@ type InstanceState struct {
 	Ipv4s pulumi.StringArrayInput
 	// This Linode's IPv6 SLAAC addresses. This address is specific to a Linode, and may not be shared.
 	Ipv6 pulumi.StringPtrInput
-	// The Config's label for display purposes.  Also used by `bootConfigLabel`.
+	// The name of this interface. If the interface is a VLAN, a label is required.
 	Label pulumi.StringPtrInput
 	// If true, the created Linode will have private networking enabled, allowing use of the 192.168.128.0/17 network within the Linode's region. It can be enabled on an existing Linode but it can't be disabled.
 	PrivateIp pulumi.BoolPtrInput
@@ -341,7 +371,8 @@ type InstanceState struct {
 	Region pulumi.StringPtrInput
 	// The initial password for the `root` user account. *This value can not be imported.* *Changing `rootPass` forces the creation of a new Linode Instance.* *If omitted, a random password will be generated but will not be stored in state.*
 	RootPass pulumi.StringPtrInput
-	Specs    InstanceSpecsPtrInput
+	// Information about the resources available to this Linode.
+	Specs InstanceSpecsPtrInput
 	// An object containing responses to any User Defined Fields present in the StackScript being deployed to this Linode. Only accepted if 'stackscript_id' is given. The required values depend on the StackScript being deployed.  *This value can not be imported.* *Changing `stackscriptData` forces the creation of a new Linode Instance.*
 	StackscriptData pulumi.MapInput
 	// The StackScript to deploy to the newly created Linode. If provided, 'image' must also be provided, and must be an Image that is compatible with this StackScript. *This value can not be imported.* *Changing `stackscriptId` forces the creation of a new Linode Instance.*
@@ -363,6 +394,7 @@ func (InstanceState) ElementType() reflect.Type {
 }
 
 type instanceArgs struct {
+	// Configuration options for alert triggers on this Linode.
 	Alerts *InstanceAlerts `pulumi:"alerts"`
 	// A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
 	AuthorizedKeys []string `pulumi:"authorizedKeys"`
@@ -381,7 +413,10 @@ type instanceArgs struct {
 	Group *string `pulumi:"group"`
 	// An Image ID to deploy the Disk from. Official Linode Images start with linode/, while your Images start with private/. See /images for more information on the Images available for you to use. Examples are `linode/debian9`, `linode/fedora28`, `linode/ubuntu16.04lts`, `linode/arch`, and `private/12345`. See all images [here](https://api.linode.com/v4/linode/kernels). *Changing `image` forces the creation of a new Linode Instance.*
 	Image *string `pulumi:"image"`
-	// The Config's label for display purposes.  Also used by `bootConfigLabel`.
+	// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+	// must be declared in the config block.
+	Interfaces []InstanceInterface `pulumi:"interfaces"`
+	// The name of this interface. If the interface is a VLAN, a label is required.
 	Label *string `pulumi:"label"`
 	// If true, the created Linode will have private networking enabled, allowing use of the 192.168.128.0/17 network within the Linode's region. It can be enabled on an existing Linode but it can't be disabled.
 	PrivateIp *bool `pulumi:"privateIp"`
@@ -405,6 +440,7 @@ type instanceArgs struct {
 
 // The set of arguments for constructing a Instance resource.
 type InstanceArgs struct {
+	// Configuration options for alert triggers on this Linode.
 	Alerts InstanceAlertsPtrInput
 	// A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
 	AuthorizedKeys pulumi.StringArrayInput
@@ -423,7 +459,10 @@ type InstanceArgs struct {
 	Group pulumi.StringPtrInput
 	// An Image ID to deploy the Disk from. Official Linode Images start with linode/, while your Images start with private/. See /images for more information on the Images available for you to use. Examples are `linode/debian9`, `linode/fedora28`, `linode/ubuntu16.04lts`, `linode/arch`, and `private/12345`. See all images [here](https://api.linode.com/v4/linode/kernels). *Changing `image` forces the creation of a new Linode Instance.*
 	Image pulumi.StringPtrInput
-	// The Config's label for display purposes.  Also used by `bootConfigLabel`.
+	// An array of Network Interfaces for this Linode to be created with. If an explicit config or disk is defined, interfaces
+	// must be declared in the config block.
+	Interfaces InstanceInterfaceArrayInput
+	// The name of this interface. If the interface is a VLAN, a label is required.
 	Label pulumi.StringPtrInput
 	// If true, the created Linode will have private networking enabled, allowing use of the 192.168.128.0/17 network within the Linode's region. It can be enabled on an existing Linode but it can't be disabled.
 	PrivateIp pulumi.BoolPtrInput
@@ -447,4 +486,191 @@ type InstanceArgs struct {
 
 func (InstanceArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*instanceArgs)(nil)).Elem()
+}
+
+type InstanceInput interface {
+	pulumi.Input
+
+	ToInstanceOutput() InstanceOutput
+	ToInstanceOutputWithContext(ctx context.Context) InstanceOutput
+}
+
+func (*Instance) ElementType() reflect.Type {
+	return reflect.TypeOf((*Instance)(nil))
+}
+
+func (i *Instance) ToInstanceOutput() InstanceOutput {
+	return i.ToInstanceOutputWithContext(context.Background())
+}
+
+func (i *Instance) ToInstanceOutputWithContext(ctx context.Context) InstanceOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(InstanceOutput)
+}
+
+func (i *Instance) ToInstancePtrOutput() InstancePtrOutput {
+	return i.ToInstancePtrOutputWithContext(context.Background())
+}
+
+func (i *Instance) ToInstancePtrOutputWithContext(ctx context.Context) InstancePtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(InstancePtrOutput)
+}
+
+type InstancePtrInput interface {
+	pulumi.Input
+
+	ToInstancePtrOutput() InstancePtrOutput
+	ToInstancePtrOutputWithContext(ctx context.Context) InstancePtrOutput
+}
+
+type instancePtrType InstanceArgs
+
+func (*instancePtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**Instance)(nil))
+}
+
+func (i *instancePtrType) ToInstancePtrOutput() InstancePtrOutput {
+	return i.ToInstancePtrOutputWithContext(context.Background())
+}
+
+func (i *instancePtrType) ToInstancePtrOutputWithContext(ctx context.Context) InstancePtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(InstancePtrOutput)
+}
+
+// InstanceArrayInput is an input type that accepts InstanceArray and InstanceArrayOutput values.
+// You can construct a concrete instance of `InstanceArrayInput` via:
+//
+//          InstanceArray{ InstanceArgs{...} }
+type InstanceArrayInput interface {
+	pulumi.Input
+
+	ToInstanceArrayOutput() InstanceArrayOutput
+	ToInstanceArrayOutputWithContext(context.Context) InstanceArrayOutput
+}
+
+type InstanceArray []InstanceInput
+
+func (InstanceArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*Instance)(nil))
+}
+
+func (i InstanceArray) ToInstanceArrayOutput() InstanceArrayOutput {
+	return i.ToInstanceArrayOutputWithContext(context.Background())
+}
+
+func (i InstanceArray) ToInstanceArrayOutputWithContext(ctx context.Context) InstanceArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(InstanceArrayOutput)
+}
+
+// InstanceMapInput is an input type that accepts InstanceMap and InstanceMapOutput values.
+// You can construct a concrete instance of `InstanceMapInput` via:
+//
+//          InstanceMap{ "key": InstanceArgs{...} }
+type InstanceMapInput interface {
+	pulumi.Input
+
+	ToInstanceMapOutput() InstanceMapOutput
+	ToInstanceMapOutputWithContext(context.Context) InstanceMapOutput
+}
+
+type InstanceMap map[string]InstanceInput
+
+func (InstanceMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*Instance)(nil))
+}
+
+func (i InstanceMap) ToInstanceMapOutput() InstanceMapOutput {
+	return i.ToInstanceMapOutputWithContext(context.Background())
+}
+
+func (i InstanceMap) ToInstanceMapOutputWithContext(ctx context.Context) InstanceMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(InstanceMapOutput)
+}
+
+type InstanceOutput struct {
+	*pulumi.OutputState
+}
+
+func (InstanceOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*Instance)(nil))
+}
+
+func (o InstanceOutput) ToInstanceOutput() InstanceOutput {
+	return o
+}
+
+func (o InstanceOutput) ToInstanceOutputWithContext(ctx context.Context) InstanceOutput {
+	return o
+}
+
+func (o InstanceOutput) ToInstancePtrOutput() InstancePtrOutput {
+	return o.ToInstancePtrOutputWithContext(context.Background())
+}
+
+func (o InstanceOutput) ToInstancePtrOutputWithContext(ctx context.Context) InstancePtrOutput {
+	return o.ApplyT(func(v Instance) *Instance {
+		return &v
+	}).(InstancePtrOutput)
+}
+
+type InstancePtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (InstancePtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**Instance)(nil))
+}
+
+func (o InstancePtrOutput) ToInstancePtrOutput() InstancePtrOutput {
+	return o
+}
+
+func (o InstancePtrOutput) ToInstancePtrOutputWithContext(ctx context.Context) InstancePtrOutput {
+	return o
+}
+
+type InstanceArrayOutput struct{ *pulumi.OutputState }
+
+func (InstanceArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]Instance)(nil))
+}
+
+func (o InstanceArrayOutput) ToInstanceArrayOutput() InstanceArrayOutput {
+	return o
+}
+
+func (o InstanceArrayOutput) ToInstanceArrayOutputWithContext(ctx context.Context) InstanceArrayOutput {
+	return o
+}
+
+func (o InstanceArrayOutput) Index(i pulumi.IntInput) InstanceOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) Instance {
+		return vs[0].([]Instance)[vs[1].(int)]
+	}).(InstanceOutput)
+}
+
+type InstanceMapOutput struct{ *pulumi.OutputState }
+
+func (InstanceMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]Instance)(nil))
+}
+
+func (o InstanceMapOutput) ToInstanceMapOutput() InstanceMapOutput {
+	return o
+}
+
+func (o InstanceMapOutput) ToInstanceMapOutputWithContext(ctx context.Context) InstanceMapOutput {
+	return o
+}
+
+func (o InstanceMapOutput) MapIndex(k pulumi.StringInput) InstanceOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) Instance {
+		return vs[0].(map[string]Instance)[vs[1].(string)]
+	}).(InstanceOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(InstanceOutput{})
+	pulumi.RegisterOutputType(InstancePtrOutput{})
+	pulumi.RegisterOutputType(InstanceArrayOutput{})
+	pulumi.RegisterOutputType(InstanceMapOutput{})
 }

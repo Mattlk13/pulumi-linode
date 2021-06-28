@@ -4,7 +4,7 @@
 package linode
 
 import (
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides information about a Linode instance type
@@ -17,8 +17,8 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -41,7 +41,7 @@ import (
 //
 // * `label` - The Linode Type's label is for display purposes only
 //
-// * `class` - The class of the Linode Type
+// * `class` - The class of the Linode Type. See all classes [here](https://www.linode.com/docs/api/linode-types/#type-view__responses).
 //
 // * `disk` - The Disk size, in MB, of the Linode Type
 //
@@ -52,6 +52,14 @@ import (
 // * `addons.0.backups.0.price.0.hourly` - The cost (in US dollars) per hour to add Backups service.
 //
 // * `addons.0.backups.0.price.0.monthly` - The cost (in US dollars) per month to add Backups service.
+//
+// * `networkOut` - The Mbits outbound bandwidth allocation.
+//
+// * `memory` - The amount of RAM included in this Linode Type.
+//
+// * `transfer` - The monthly outbound transfer amount, in MB.
+//
+// * `vcpus` - The number of VCPU cores this Linode Type offers.
 func GetInstanceType(ctx *pulumi.Context, args *GetInstanceTypeArgs, opts ...pulumi.InvokeOption) (*GetInstanceTypeResult, error) {
 	var rv GetInstanceTypeResult
 	err := ctx.Invoke("linode:index/getInstanceType:getInstanceType", args, &rv, opts...)

@@ -4,10 +4,11 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides a Linode Object Storage Object resource. This can be used to create, modify, and delete Linodes Object Storage Objects for Buckets.
@@ -19,8 +20,8 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -47,7 +48,7 @@ type ObjectStorageObject struct {
 
 	// The access key to authenticate with.
 	AccessKey pulumi.StringOutput `pulumi:"accessKey"`
-	// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+	// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
 	Acl pulumi.StringPtrOutput `pulumi:"acl"`
 	// The name of the bucket to put the object in.
 	Bucket pulumi.StringOutput `pulumi:"bucket"`
@@ -67,7 +68,8 @@ type ObjectStorageObject struct {
 	ContentLanguage pulumi.StringPtrOutput `pulumi:"contentLanguage"`
 	// A standard MIME type describing the format of the object data, e.g. application/octet-stream. All Valid MIME Types are valid for this input.
 	ContentType pulumi.StringOutput `pulumi:"contentType"`
-	Etag        pulumi.StringOutput `pulumi:"etag"`
+	// The specific version of this object.
+	Etag pulumi.StringOutput `pulumi:"etag"`
 	// Allow the object to be deleted regardless of any legal hold or object lock (defaults to `false`).
 	ForceDestroy pulumi.BoolPtrOutput `pulumi:"forceDestroy"`
 	// They name of the object once it is in the bucket.
@@ -87,23 +89,24 @@ type ObjectStorageObject struct {
 // NewObjectStorageObject registers a new resource with the given unique name, arguments, and options.
 func NewObjectStorageObject(ctx *pulumi.Context,
 	name string, args *ObjectStorageObjectArgs, opts ...pulumi.ResourceOption) (*ObjectStorageObject, error) {
-	if args == nil || args.AccessKey == nil {
-		return nil, errors.New("missing required argument 'AccessKey'")
-	}
-	if args == nil || args.Bucket == nil {
-		return nil, errors.New("missing required argument 'Bucket'")
-	}
-	if args == nil || args.Cluster == nil {
-		return nil, errors.New("missing required argument 'Cluster'")
-	}
-	if args == nil || args.Key == nil {
-		return nil, errors.New("missing required argument 'Key'")
-	}
-	if args == nil || args.SecretKey == nil {
-		return nil, errors.New("missing required argument 'SecretKey'")
-	}
 	if args == nil {
-		args = &ObjectStorageObjectArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.AccessKey == nil {
+		return nil, errors.New("invalid value for required argument 'AccessKey'")
+	}
+	if args.Bucket == nil {
+		return nil, errors.New("invalid value for required argument 'Bucket'")
+	}
+	if args.Cluster == nil {
+		return nil, errors.New("invalid value for required argument 'Cluster'")
+	}
+	if args.Key == nil {
+		return nil, errors.New("invalid value for required argument 'Key'")
+	}
+	if args.SecretKey == nil {
+		return nil, errors.New("invalid value for required argument 'SecretKey'")
 	}
 	var resource ObjectStorageObject
 	err := ctx.RegisterResource("linode:index/objectStorageObject:ObjectStorageObject", name, args, &resource, opts...)
@@ -129,7 +132,7 @@ func GetObjectStorageObject(ctx *pulumi.Context,
 type objectStorageObjectState struct {
 	// The access key to authenticate with.
 	AccessKey *string `pulumi:"accessKey"`
-	// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+	// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
 	Acl *string `pulumi:"acl"`
 	// The name of the bucket to put the object in.
 	Bucket *string `pulumi:"bucket"`
@@ -149,7 +152,8 @@ type objectStorageObjectState struct {
 	ContentLanguage *string `pulumi:"contentLanguage"`
 	// A standard MIME type describing the format of the object data, e.g. application/octet-stream. All Valid MIME Types are valid for this input.
 	ContentType *string `pulumi:"contentType"`
-	Etag        *string `pulumi:"etag"`
+	// The specific version of this object.
+	Etag *string `pulumi:"etag"`
 	// Allow the object to be deleted regardless of any legal hold or object lock (defaults to `false`).
 	ForceDestroy *bool `pulumi:"forceDestroy"`
 	// They name of the object once it is in the bucket.
@@ -169,7 +173,7 @@ type objectStorageObjectState struct {
 type ObjectStorageObjectState struct {
 	// The access key to authenticate with.
 	AccessKey pulumi.StringPtrInput
-	// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+	// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
 	Acl pulumi.StringPtrInput
 	// The name of the bucket to put the object in.
 	Bucket pulumi.StringPtrInput
@@ -189,7 +193,8 @@ type ObjectStorageObjectState struct {
 	ContentLanguage pulumi.StringPtrInput
 	// A standard MIME type describing the format of the object data, e.g. application/octet-stream. All Valid MIME Types are valid for this input.
 	ContentType pulumi.StringPtrInput
-	Etag        pulumi.StringPtrInput
+	// The specific version of this object.
+	Etag pulumi.StringPtrInput
 	// Allow the object to be deleted regardless of any legal hold or object lock (defaults to `false`).
 	ForceDestroy pulumi.BoolPtrInput
 	// They name of the object once it is in the bucket.
@@ -213,7 +218,7 @@ func (ObjectStorageObjectState) ElementType() reflect.Type {
 type objectStorageObjectArgs struct {
 	// The access key to authenticate with.
 	AccessKey string `pulumi:"accessKey"`
-	// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+	// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
 	Acl *string `pulumi:"acl"`
 	// The name of the bucket to put the object in.
 	Bucket string `pulumi:"bucket"`
@@ -233,7 +238,8 @@ type objectStorageObjectArgs struct {
 	ContentLanguage *string `pulumi:"contentLanguage"`
 	// A standard MIME type describing the format of the object data, e.g. application/octet-stream. All Valid MIME Types are valid for this input.
 	ContentType *string `pulumi:"contentType"`
-	Etag        *string `pulumi:"etag"`
+	// The specific version of this object.
+	Etag *string `pulumi:"etag"`
 	// Allow the object to be deleted regardless of any legal hold or object lock (defaults to `false`).
 	ForceDestroy *bool `pulumi:"forceDestroy"`
 	// They name of the object once it is in the bucket.
@@ -252,7 +258,7 @@ type objectStorageObjectArgs struct {
 type ObjectStorageObjectArgs struct {
 	// The access key to authenticate with.
 	AccessKey pulumi.StringInput
-	// The canned ACL to apply. Can be either `private` or `public-read` (defaults to `private`).
+	// The canned ACL to apply. (`private`, `public-read`, `authenticated-read`, `public-read-write`, `custom`) (defaults to `private`).
 	Acl pulumi.StringPtrInput
 	// The name of the bucket to put the object in.
 	Bucket pulumi.StringInput
@@ -272,7 +278,8 @@ type ObjectStorageObjectArgs struct {
 	ContentLanguage pulumi.StringPtrInput
 	// A standard MIME type describing the format of the object data, e.g. application/octet-stream. All Valid MIME Types are valid for this input.
 	ContentType pulumi.StringPtrInput
-	Etag        pulumi.StringPtrInput
+	// The specific version of this object.
+	Etag pulumi.StringPtrInput
 	// Allow the object to be deleted regardless of any legal hold or object lock (defaults to `false`).
 	ForceDestroy pulumi.BoolPtrInput
 	// They name of the object once it is in the bucket.
@@ -289,4 +296,191 @@ type ObjectStorageObjectArgs struct {
 
 func (ObjectStorageObjectArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*objectStorageObjectArgs)(nil)).Elem()
+}
+
+type ObjectStorageObjectInput interface {
+	pulumi.Input
+
+	ToObjectStorageObjectOutput() ObjectStorageObjectOutput
+	ToObjectStorageObjectOutputWithContext(ctx context.Context) ObjectStorageObjectOutput
+}
+
+func (*ObjectStorageObject) ElementType() reflect.Type {
+	return reflect.TypeOf((*ObjectStorageObject)(nil))
+}
+
+func (i *ObjectStorageObject) ToObjectStorageObjectOutput() ObjectStorageObjectOutput {
+	return i.ToObjectStorageObjectOutputWithContext(context.Background())
+}
+
+func (i *ObjectStorageObject) ToObjectStorageObjectOutputWithContext(ctx context.Context) ObjectStorageObjectOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageObjectOutput)
+}
+
+func (i *ObjectStorageObject) ToObjectStorageObjectPtrOutput() ObjectStorageObjectPtrOutput {
+	return i.ToObjectStorageObjectPtrOutputWithContext(context.Background())
+}
+
+func (i *ObjectStorageObject) ToObjectStorageObjectPtrOutputWithContext(ctx context.Context) ObjectStorageObjectPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageObjectPtrOutput)
+}
+
+type ObjectStorageObjectPtrInput interface {
+	pulumi.Input
+
+	ToObjectStorageObjectPtrOutput() ObjectStorageObjectPtrOutput
+	ToObjectStorageObjectPtrOutputWithContext(ctx context.Context) ObjectStorageObjectPtrOutput
+}
+
+type objectStorageObjectPtrType ObjectStorageObjectArgs
+
+func (*objectStorageObjectPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**ObjectStorageObject)(nil))
+}
+
+func (i *objectStorageObjectPtrType) ToObjectStorageObjectPtrOutput() ObjectStorageObjectPtrOutput {
+	return i.ToObjectStorageObjectPtrOutputWithContext(context.Background())
+}
+
+func (i *objectStorageObjectPtrType) ToObjectStorageObjectPtrOutputWithContext(ctx context.Context) ObjectStorageObjectPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageObjectPtrOutput)
+}
+
+// ObjectStorageObjectArrayInput is an input type that accepts ObjectStorageObjectArray and ObjectStorageObjectArrayOutput values.
+// You can construct a concrete instance of `ObjectStorageObjectArrayInput` via:
+//
+//          ObjectStorageObjectArray{ ObjectStorageObjectArgs{...} }
+type ObjectStorageObjectArrayInput interface {
+	pulumi.Input
+
+	ToObjectStorageObjectArrayOutput() ObjectStorageObjectArrayOutput
+	ToObjectStorageObjectArrayOutputWithContext(context.Context) ObjectStorageObjectArrayOutput
+}
+
+type ObjectStorageObjectArray []ObjectStorageObjectInput
+
+func (ObjectStorageObjectArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*ObjectStorageObject)(nil))
+}
+
+func (i ObjectStorageObjectArray) ToObjectStorageObjectArrayOutput() ObjectStorageObjectArrayOutput {
+	return i.ToObjectStorageObjectArrayOutputWithContext(context.Background())
+}
+
+func (i ObjectStorageObjectArray) ToObjectStorageObjectArrayOutputWithContext(ctx context.Context) ObjectStorageObjectArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageObjectArrayOutput)
+}
+
+// ObjectStorageObjectMapInput is an input type that accepts ObjectStorageObjectMap and ObjectStorageObjectMapOutput values.
+// You can construct a concrete instance of `ObjectStorageObjectMapInput` via:
+//
+//          ObjectStorageObjectMap{ "key": ObjectStorageObjectArgs{...} }
+type ObjectStorageObjectMapInput interface {
+	pulumi.Input
+
+	ToObjectStorageObjectMapOutput() ObjectStorageObjectMapOutput
+	ToObjectStorageObjectMapOutputWithContext(context.Context) ObjectStorageObjectMapOutput
+}
+
+type ObjectStorageObjectMap map[string]ObjectStorageObjectInput
+
+func (ObjectStorageObjectMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*ObjectStorageObject)(nil))
+}
+
+func (i ObjectStorageObjectMap) ToObjectStorageObjectMapOutput() ObjectStorageObjectMapOutput {
+	return i.ToObjectStorageObjectMapOutputWithContext(context.Background())
+}
+
+func (i ObjectStorageObjectMap) ToObjectStorageObjectMapOutputWithContext(ctx context.Context) ObjectStorageObjectMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageObjectMapOutput)
+}
+
+type ObjectStorageObjectOutput struct {
+	*pulumi.OutputState
+}
+
+func (ObjectStorageObjectOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*ObjectStorageObject)(nil))
+}
+
+func (o ObjectStorageObjectOutput) ToObjectStorageObjectOutput() ObjectStorageObjectOutput {
+	return o
+}
+
+func (o ObjectStorageObjectOutput) ToObjectStorageObjectOutputWithContext(ctx context.Context) ObjectStorageObjectOutput {
+	return o
+}
+
+func (o ObjectStorageObjectOutput) ToObjectStorageObjectPtrOutput() ObjectStorageObjectPtrOutput {
+	return o.ToObjectStorageObjectPtrOutputWithContext(context.Background())
+}
+
+func (o ObjectStorageObjectOutput) ToObjectStorageObjectPtrOutputWithContext(ctx context.Context) ObjectStorageObjectPtrOutput {
+	return o.ApplyT(func(v ObjectStorageObject) *ObjectStorageObject {
+		return &v
+	}).(ObjectStorageObjectPtrOutput)
+}
+
+type ObjectStorageObjectPtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (ObjectStorageObjectPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**ObjectStorageObject)(nil))
+}
+
+func (o ObjectStorageObjectPtrOutput) ToObjectStorageObjectPtrOutput() ObjectStorageObjectPtrOutput {
+	return o
+}
+
+func (o ObjectStorageObjectPtrOutput) ToObjectStorageObjectPtrOutputWithContext(ctx context.Context) ObjectStorageObjectPtrOutput {
+	return o
+}
+
+type ObjectStorageObjectArrayOutput struct{ *pulumi.OutputState }
+
+func (ObjectStorageObjectArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]ObjectStorageObject)(nil))
+}
+
+func (o ObjectStorageObjectArrayOutput) ToObjectStorageObjectArrayOutput() ObjectStorageObjectArrayOutput {
+	return o
+}
+
+func (o ObjectStorageObjectArrayOutput) ToObjectStorageObjectArrayOutputWithContext(ctx context.Context) ObjectStorageObjectArrayOutput {
+	return o
+}
+
+func (o ObjectStorageObjectArrayOutput) Index(i pulumi.IntInput) ObjectStorageObjectOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) ObjectStorageObject {
+		return vs[0].([]ObjectStorageObject)[vs[1].(int)]
+	}).(ObjectStorageObjectOutput)
+}
+
+type ObjectStorageObjectMapOutput struct{ *pulumi.OutputState }
+
+func (ObjectStorageObjectMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]ObjectStorageObject)(nil))
+}
+
+func (o ObjectStorageObjectMapOutput) ToObjectStorageObjectMapOutput() ObjectStorageObjectMapOutput {
+	return o
+}
+
+func (o ObjectStorageObjectMapOutput) ToObjectStorageObjectMapOutputWithContext(ctx context.Context) ObjectStorageObjectMapOutput {
+	return o
+}
+
+func (o ObjectStorageObjectMapOutput) MapIndex(k pulumi.StringInput) ObjectStorageObjectOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) ObjectStorageObject {
+		return vs[0].(map[string]ObjectStorageObject)[vs[1].(string)]
+	}).(ObjectStorageObjectOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(ObjectStorageObjectOutput{})
+	pulumi.RegisterOutputType(ObjectStorageObjectPtrOutput{})
+	pulumi.RegisterOutputType(ObjectStorageObjectArrayOutput{})
+	pulumi.RegisterOutputType(ObjectStorageObjectMapOutput{})
 }

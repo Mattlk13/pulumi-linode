@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -24,6 +23,14 @@ import * as utilities from "./utilities";
  *     cluster: primary.then(primary => primary.id),
  *     label: `%s`,
  * });
+ * ```
+ *
+ * ## Import
+ *
+ * Linodes Object Storage Buckets can be imported using the resource `id` which is made of `cluster:label`, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/objectStorageBucket:ObjectStorageBucket mybucket us-east-1:foobar
  * ```
  */
 export class ObjectStorageBucket extends pulumi.CustomResource {
@@ -54,15 +61,42 @@ export class ObjectStorageBucket extends pulumi.CustomResource {
         return obj['__pulumiType'] === ObjectStorageBucket.__pulumiType;
     }
 
+    /**
+     * The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+     */
+    public readonly accessKey!: pulumi.Output<string | undefined>;
+    /**
+     * The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+     */
+    public readonly acl!: pulumi.Output<string | undefined>;
+    /**
+     * The cert used by this Object Storage Bucket.
+     */
     public readonly cert!: pulumi.Output<outputs.ObjectStorageBucketCert | undefined>;
     /**
      * The cluster of the Linode Object Storage Bucket.
      */
     public readonly cluster!: pulumi.Output<string>;
     /**
+     * If true, the bucket will have CORS enabled for all origins.
+     */
+    public readonly corsEnabled!: pulumi.Output<boolean | undefined>;
+    /**
      * The label of the Linode Object Storage Bucket.
      */
     public readonly label!: pulumi.Output<string>;
+    /**
+     * Lifecycle rules to be applied to the bucket.
+     */
+    public readonly lifecycleRules!: pulumi.Output<outputs.ObjectStorageBucketLifecycleRule[] | undefined>;
+    /**
+     * The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+     */
+    public readonly secretKey!: pulumi.Output<string | undefined>;
+    /**
+     * Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+     */
+    public readonly versioning!: pulumi.Output<boolean>;
 
     /**
      * Create a ObjectStorageBucket resource with the given unique name, arguments, and options.
@@ -74,29 +108,38 @@ export class ObjectStorageBucket extends pulumi.CustomResource {
     constructor(name: string, args: ObjectStorageBucketArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: ObjectStorageBucketArgs | ObjectStorageBucketState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as ObjectStorageBucketState | undefined;
+            inputs["accessKey"] = state ? state.accessKey : undefined;
+            inputs["acl"] = state ? state.acl : undefined;
             inputs["cert"] = state ? state.cert : undefined;
             inputs["cluster"] = state ? state.cluster : undefined;
+            inputs["corsEnabled"] = state ? state.corsEnabled : undefined;
             inputs["label"] = state ? state.label : undefined;
+            inputs["lifecycleRules"] = state ? state.lifecycleRules : undefined;
+            inputs["secretKey"] = state ? state.secretKey : undefined;
+            inputs["versioning"] = state ? state.versioning : undefined;
         } else {
             const args = argsOrState as ObjectStorageBucketArgs | undefined;
-            if (!args || args.cluster === undefined) {
+            if ((!args || args.cluster === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'cluster'");
             }
-            if (!args || args.label === undefined) {
+            if ((!args || args.label === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'label'");
             }
+            inputs["accessKey"] = args ? args.accessKey : undefined;
+            inputs["acl"] = args ? args.acl : undefined;
             inputs["cert"] = args ? args.cert : undefined;
             inputs["cluster"] = args ? args.cluster : undefined;
+            inputs["corsEnabled"] = args ? args.corsEnabled : undefined;
             inputs["label"] = args ? args.label : undefined;
+            inputs["lifecycleRules"] = args ? args.lifecycleRules : undefined;
+            inputs["secretKey"] = args ? args.secretKey : undefined;
+            inputs["versioning"] = args ? args.versioning : undefined;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(ObjectStorageBucket.__pulumiType, name, inputs, opts);
     }
@@ -106,28 +149,82 @@ export class ObjectStorageBucket extends pulumi.CustomResource {
  * Input properties used for looking up and filtering ObjectStorageBucket resources.
  */
 export interface ObjectStorageBucketState {
+    /**
+     * The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+     */
+    readonly accessKey?: pulumi.Input<string>;
+    /**
+     * The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+     */
+    readonly acl?: pulumi.Input<string>;
+    /**
+     * The cert used by this Object Storage Bucket.
+     */
     readonly cert?: pulumi.Input<inputs.ObjectStorageBucketCert>;
     /**
      * The cluster of the Linode Object Storage Bucket.
      */
     readonly cluster?: pulumi.Input<string>;
     /**
+     * If true, the bucket will have CORS enabled for all origins.
+     */
+    readonly corsEnabled?: pulumi.Input<boolean>;
+    /**
      * The label of the Linode Object Storage Bucket.
      */
     readonly label?: pulumi.Input<string>;
+    /**
+     * Lifecycle rules to be applied to the bucket.
+     */
+    readonly lifecycleRules?: pulumi.Input<pulumi.Input<inputs.ObjectStorageBucketLifecycleRule>[]>;
+    /**
+     * The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+     */
+    readonly secretKey?: pulumi.Input<string>;
+    /**
+     * Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+     */
+    readonly versioning?: pulumi.Input<boolean>;
 }
 
 /**
  * The set of arguments for constructing a ObjectStorageBucket resource.
  */
 export interface ObjectStorageBucketArgs {
+    /**
+     * The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+     */
+    readonly accessKey?: pulumi.Input<string>;
+    /**
+     * The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+     */
+    readonly acl?: pulumi.Input<string>;
+    /**
+     * The cert used by this Object Storage Bucket.
+     */
     readonly cert?: pulumi.Input<inputs.ObjectStorageBucketCert>;
     /**
      * The cluster of the Linode Object Storage Bucket.
      */
     readonly cluster: pulumi.Input<string>;
     /**
+     * If true, the bucket will have CORS enabled for all origins.
+     */
+    readonly corsEnabled?: pulumi.Input<boolean>;
+    /**
      * The label of the Linode Object Storage Bucket.
      */
     readonly label: pulumi.Input<string>;
+    /**
+     * Lifecycle rules to be applied to the bucket.
+     */
+    readonly lifecycleRules?: pulumi.Input<pulumi.Input<inputs.ObjectStorageBucketLifecycleRule>[]>;
+    /**
+     * The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+     */
+    readonly secretKey?: pulumi.Input<string>;
+    /**
+     * Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+     */
+    readonly versioning?: pulumi.Input<boolean>;
 }

@@ -4,7 +4,7 @@
 package linode
 
 import (
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides information about a Linode domain.
@@ -17,8 +17,8 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -49,11 +49,11 @@ import (
 //
 // * `domain` - The domain this Domain represents. These must be unique in our system; you cannot have two Domains representing the same domain
 //
-// * `type` - If this Domain represents the authoritative source of information for the domain it describes, or if it is a read-only copy of a master (also called a slave)
+// * `type` - If this Domain represents the authoritative source of information for the domain it describes, or if it is a read-only copy of a master (also called a slave) (`master`, `slave`)
 //
 // * `group` - The group this Domain belongs to.
 //
-// * `status` - Used to control whether this Domain is currently being rendered.
+// * `status` - Used to control whether this Domain is currently being rendered. (`disabled`, `active`)
 //
 // * `description` - A description for this Domain.
 //

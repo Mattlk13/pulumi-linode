@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "../types/input";
-import * as outputs from "../types/output";
+import { input as inputs, output as outputs } from "../types";
 
 export interface FirewallDevice {
     /**
@@ -15,7 +14,7 @@ export interface FirewallDevice {
      */
     id?: pulumi.Input<number>;
     /**
-     * This Firewall's unique label.
+     * Used to identify this rule. For display purposes only.
      */
     label?: pulumi.Input<string>;
     /**
@@ -27,32 +26,78 @@ export interface FirewallDevice {
 
 export interface FirewallInbound {
     /**
-     * A list of IP addresses, CIDR blocks, or `0.0.0.0/0` (to allow all) this rule applies to.
+     * Controls whether traffic is accepted or dropped by this rule (`ACCEPT`, `DROP`). Overrides the Firewall’s inboundPolicy if this is an inbound rule, or the outboundPolicy if this is an outbound rule.
      */
-    addresses: pulumi.Input<pulumi.Input<string>[]>;
+    action: pulumi.Input<string>;
     /**
-     * A list of ports and/or port ranges (i.e. "443" or "80-90").
+     * A list of IPv4 addresses or networks. Must be in IP/mask format.
      */
-    ports: pulumi.Input<pulumi.Input<string>[]>;
+    ipv4s?: pulumi.Input<pulumi.Input<string>[]>;
     /**
-     * The network protocol this rule controls.
+     * A list of IPv6 addresses or networks. Must be in IP/mask format.
+     */
+    ipv6s?: pulumi.Input<pulumi.Input<string>[]>;
+    /**
+     * Used to identify this rule. For display purposes only.
+     */
+    label: pulumi.Input<string>;
+    /**
+     * A string representation of ports and/or port ranges (i.e. "443" or "80-90, 91").
+     */
+    ports?: pulumi.Input<string>;
+    /**
+     * The network protocol this rule controls. (`TCP`, `UDP`, `ICMP`)
      */
     protocol: pulumi.Input<string>;
 }
 
 export interface FirewallOutbound {
     /**
-     * A list of IP addresses, CIDR blocks, or `0.0.0.0/0` (to allow all) this rule applies to.
+     * Controls whether traffic is accepted or dropped by this rule (`ACCEPT`, `DROP`). Overrides the Firewall’s inboundPolicy if this is an inbound rule, or the outboundPolicy if this is an outbound rule.
      */
-    addresses: pulumi.Input<pulumi.Input<string>[]>;
+    action: pulumi.Input<string>;
     /**
-     * A list of ports and/or port ranges (i.e. "443" or "80-90").
+     * A list of IPv4 addresses or networks. Must be in IP/mask format.
      */
-    ports: pulumi.Input<pulumi.Input<string>[]>;
+    ipv4s?: pulumi.Input<pulumi.Input<string>[]>;
     /**
-     * The network protocol this rule controls.
+     * A list of IPv6 addresses or networks. Must be in IP/mask format.
+     */
+    ipv6s?: pulumi.Input<pulumi.Input<string>[]>;
+    /**
+     * Used to identify this rule. For display purposes only.
+     */
+    label: pulumi.Input<string>;
+    /**
+     * A string representation of ports and/or port ranges (i.e. "443" or "80-90, 91").
+     */
+    ports?: pulumi.Input<string>;
+    /**
+     * The network protocol this rule controls. (`TCP`, `UDP`, `ICMP`)
      */
     protocol: pulumi.Input<string>;
+}
+
+export interface GetImagesFilter {
+    /**
+     * The name of the field to filter by. See the Filterable Fields section for a complete list of filterable fields.
+     */
+    name: string;
+    /**
+     * A list of values for the filter to allow. These values should all be in string form.
+     */
+    values: string[];
+}
+
+export interface GetInstancesFilter {
+    /**
+     * The name of the field to filter by. See the Filterable Fields section for a list of filterable fields.
+     */
+    name: string;
+    /**
+     * A list of values for the filter to allow. These values should all be in string form.
+     */
+    values: string[];
 }
 
 export interface GetStackScriptUserDefinedField {
@@ -62,6 +107,17 @@ export interface GetStackScriptUserDefinedField {
     manyOf?: string;
     name?: string;
     oneOf?: string;
+}
+
+export interface GetVlansFilter {
+    /**
+     * The name of the field to filter by. See the Filterable Fields section for a complete list of filterable fields.
+     */
+    name: string;
+    /**
+     * A list of values for the filter to allow. These values should all be in string form.
+     */
+    values: string[];
 }
 
 export interface InstanceAlerts {
@@ -95,12 +151,13 @@ export interface InstanceConfig {
      * Helpers enabled when booting to this Linode Config.
      */
     helpers?: pulumi.Input<inputs.InstanceConfigHelpers>;
+    interfaces?: pulumi.Input<pulumi.Input<inputs.InstanceConfigInterface>[]>;
     /**
      * - A Kernel ID to boot a Linode with. Default is based on image choice. Examples are `linode/latest-64bit`, `linode/grub2`, `linode/direct-disk`, etc. See all kernels [here](https://api.linode.com/v4/linode/kernels). Note that this is a paginated API endpoint ([docs](https://developers.linode.com/api/v4/linode-kernels)).
      */
     kernel?: pulumi.Input<string>;
     /**
-     * The Config's label for display purposes.  Also used by `bootConfigLabel`.
+     * The name of this interface. If the interface is a VLAN, a label is required.
      */
     label: pulumi.Input<string>;
     /**
@@ -275,6 +332,21 @@ export interface InstanceConfigHelpers {
     updatedbDisabled?: pulumi.Input<boolean>;
 }
 
+export interface InstanceConfigInterface {
+    /**
+     * This Network Interface’s private IP address in Classless Inter-Domain Routing (CIDR) notation.
+     */
+    ipamAddress?: pulumi.Input<string>;
+    /**
+     * The name of this interface. If the interface is a VLAN, a label is required.
+     */
+    label?: pulumi.Input<string>;
+    /**
+     * The type of interface. (`public`, `vlan`)
+     */
+    purpose?: pulumi.Input<string>;
+}
+
 export interface InstanceDisk {
     /**
      * A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorizedKeys` forces the creation of a new Linode Instance.*
@@ -297,7 +369,7 @@ export interface InstanceDisk {
      */
     image?: pulumi.Input<string>;
     /**
-     * The Config's label for display purposes.  Also used by `bootConfigLabel`.
+     * The name of this interface. If the interface is a VLAN, a label is required.
      */
     label: pulumi.Input<string>;
     readOnly?: pulumi.Input<boolean>;
@@ -319,6 +391,21 @@ export interface InstanceDisk {
     stackscriptId?: pulumi.Input<number>;
 }
 
+export interface InstanceInterface {
+    /**
+     * This Network Interface’s private IP address in Classless Inter-Domain Routing (CIDR) notation.
+     */
+    ipamAddress?: pulumi.Input<string>;
+    /**
+     * The name of this interface. If the interface is a VLAN, a label is required.
+     */
+    label?: pulumi.Input<string>;
+    /**
+     * The type of interface. (`public`, `vlan`)
+     */
+    purpose?: pulumi.Input<string>;
+}
+
 export interface InstanceSpecs {
     disk?: pulumi.Input<number>;
     memory?: pulumi.Input<number>;
@@ -337,7 +424,7 @@ export interface LkeClusterPool {
     id?: pulumi.Input<number>;
     nodes?: pulumi.Input<pulumi.Input<inputs.LkeClusterPoolNode>[]>;
     /**
-     * A Linode Type for all of the nodes in the Node Pool.
+     * A Linode Type for all of the nodes in the Node Pool. See all node types [here](https://api.linode.com/v4/linode/types).
      */
     type: pulumi.Input<string>;
 }
@@ -352,14 +439,14 @@ export interface LkeClusterPoolNode {
      */
     instanceId?: pulumi.Input<number>;
     /**
-     * The status of the node.
+     * The status of the node. (`ready`, `notReady`)
      */
     status?: pulumi.Input<string>;
 }
 
 export interface NodeBalancerConfigNodeStatus {
-    statusDown?: pulumi.Input<number>;
-    statusUp?: pulumi.Input<number>;
+    down?: pulumi.Input<number>;
+    up?: pulumi.Input<number>;
 }
 
 export interface NodeBalancerTransfer {
@@ -379,6 +466,64 @@ export interface ObjectStorageBucketCert {
     privateKey: pulumi.Input<string>;
 }
 
+export interface ObjectStorageBucketLifecycleRule {
+    /**
+     * Specifies the number of days after initiating a multipart upload when the multipart upload must be completed.
+     */
+    abortIncompleteMultipartUploadDays?: pulumi.Input<number>;
+    /**
+     * Specifies whether the lifecycle rule is active.
+     */
+    enabled: pulumi.Input<boolean>;
+    expiration?: pulumi.Input<inputs.ObjectStorageBucketLifecycleRuleExpiration>;
+    /**
+     * The unique identifier for the rule.
+     */
+    id?: pulumi.Input<string>;
+    noncurrentVersionExpiration?: pulumi.Input<inputs.ObjectStorageBucketLifecycleRuleNoncurrentVersionExpiration>;
+    /**
+     * The object key prefix identifying one or more objects to which the rule applies.
+     */
+    prefix?: pulumi.Input<string>;
+}
+
+export interface ObjectStorageBucketLifecycleRuleExpiration {
+    /**
+     * Specifies the date after which you want the corresponding action to take effect.
+     */
+    date?: pulumi.Input<string>;
+    /**
+     * Specifies the number of days non-current object versions expire.
+     */
+    days?: pulumi.Input<number>;
+    /**
+     * On a versioned bucket (versioning-enabled or versioning-suspended bucket), you can add this element in the lifecycle configuration to direct Linode Object Storage to delete expired object delete markers. This cannot be specified with Days or Date in a Lifecycle Expiration Policy.
+     */
+    expiredObjectDeleteMarker?: pulumi.Input<boolean>;
+}
+
+export interface ObjectStorageBucketLifecycleRuleNoncurrentVersionExpiration {
+    /**
+     * Specifies the number of days non-current object versions expire.
+     */
+    days: pulumi.Input<number>;
+}
+
+export interface ObjectStorageKeyBucketAccess {
+    /**
+     * The unique label of the bucket to which the key will grant limited access.
+     */
+    bucketName: pulumi.Input<string>;
+    /**
+     * The Object Storage cluster where a bucket to which the key is granting access is hosted.
+     */
+    cluster: pulumi.Input<string>;
+    /**
+     * This Limited Access Key’s permissions for the selected bucket. *Changing `permissions` forces the creation of a new Object Storage Key.* (`readWrite`, `readOnly`)
+     */
+    permissions: pulumi.Input<string>;
+}
+
 export interface StackScriptUserDefinedField {
     default?: pulumi.Input<string>;
     example?: pulumi.Input<string>;
@@ -389,4 +534,52 @@ export interface StackScriptUserDefinedField {
     manyOf?: pulumi.Input<string>;
     name?: pulumi.Input<string>;
     oneOf?: pulumi.Input<string>;
+}
+
+export interface UserDomainGrant {
+    id: pulumi.Input<number>;
+    permissions: pulumi.Input<string>;
+}
+
+export interface UserGlobalGrants {
+    accountAccess?: pulumi.Input<string>;
+    addDomains?: pulumi.Input<boolean>;
+    addImages?: pulumi.Input<boolean>;
+    addLinodes?: pulumi.Input<boolean>;
+    addLongview?: pulumi.Input<boolean>;
+    addNodebalancers?: pulumi.Input<boolean>;
+    addStackscripts?: pulumi.Input<boolean>;
+    addVolumes?: pulumi.Input<boolean>;
+    cancelAccount?: pulumi.Input<boolean>;
+    longviewSubscription?: pulumi.Input<boolean>;
+}
+
+export interface UserImageGrant {
+    id: pulumi.Input<number>;
+    permissions: pulumi.Input<string>;
+}
+
+export interface UserLinodeGrant {
+    id: pulumi.Input<number>;
+    permissions: pulumi.Input<string>;
+}
+
+export interface UserLongviewGrant {
+    id: pulumi.Input<number>;
+    permissions: pulumi.Input<string>;
+}
+
+export interface UserNodebalancerGrant {
+    id: pulumi.Input<number>;
+    permissions: pulumi.Input<string>;
+}
+
+export interface UserStackscriptGrant {
+    id: pulumi.Input<number>;
+    permissions: pulumi.Input<string>;
+}
+
+export interface UserVolumeGrant {
+    id: pulumi.Input<number>;
+    permissions: pulumi.Input<string>;
 }

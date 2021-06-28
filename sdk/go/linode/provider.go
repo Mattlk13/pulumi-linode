@@ -4,9 +4,11 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pkg/errors"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // The provider type for the linode package. By default, resources use package-wide configuration
@@ -21,13 +23,14 @@ type Provider struct {
 func NewProvider(ctx *pulumi.Context,
 	name string, args *ProviderArgs, opts ...pulumi.ResourceOption) (*Provider, error) {
 	if args == nil {
-		args = &ProviderArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.Token == nil {
+		return nil, errors.New("invalid value for required argument 'Token'")
 	}
 	if args.ApiVersion == nil {
 		args.ApiVersion = pulumi.StringPtr(getEnvOrDefault("", nil, "LINODE_API_VERSION").(string))
-	}
-	if args.Token == nil {
-		args.Token = pulumi.StringPtr(getEnvOrDefault("", nil, "LINODE_TOKEN", "LINODE_API_TOKEN").(string))
 	}
 	if args.UaPrefix == nil {
 		args.UaPrefix = pulumi.StringPtr(getEnvOrDefault("", nil, "LINODE_UA_PREFIX").(string))
@@ -46,8 +49,22 @@ func NewProvider(ctx *pulumi.Context,
 type providerArgs struct {
 	// An HTTP User-Agent Prefix to prepend in API requests.
 	ApiVersion *string `pulumi:"apiVersion"`
+	// The rate in milliseconds to poll for events.
+	EventPollMs *int `pulumi:"eventPollMs"`
+	// The rate in milliseconds to poll for LKE events.
+	LkeEventPollMs *int `pulumi:"lkeEventPollMs"`
+	// The rate in milliseconds to poll for an LKE node to be ready.
+	LkeNodeReadyPollMs *int `pulumi:"lkeNodeReadyPollMs"`
+	// Maximum delay in milliseconds before retrying a request.
+	MaxRetryDelayMs *int `pulumi:"maxRetryDelayMs"`
+	// Minimum delay in milliseconds before retrying a request.
+	MinRetryDelayMs *int `pulumi:"minRetryDelayMs"`
+	// Skip waiting for a linode_instance resource to finish deleting.
+	SkipInstanceDeletePoll *bool `pulumi:"skipInstanceDeletePoll"`
+	// Skip waiting for a linode_instance resource to be running.
+	SkipInstanceReadyPoll *bool `pulumi:"skipInstanceReadyPoll"`
 	// The token that allows you access to your Linode account
-	Token *string `pulumi:"token"`
+	Token string `pulumi:"token"`
 	// An HTTP User-Agent Prefix to prepend in API requests.
 	UaPrefix *string `pulumi:"uaPrefix"`
 	// The HTTP(S) API address of the Linode API to use.
@@ -58,8 +75,22 @@ type providerArgs struct {
 type ProviderArgs struct {
 	// An HTTP User-Agent Prefix to prepend in API requests.
 	ApiVersion pulumi.StringPtrInput
+	// The rate in milliseconds to poll for events.
+	EventPollMs pulumi.IntPtrInput
+	// The rate in milliseconds to poll for LKE events.
+	LkeEventPollMs pulumi.IntPtrInput
+	// The rate in milliseconds to poll for an LKE node to be ready.
+	LkeNodeReadyPollMs pulumi.IntPtrInput
+	// Maximum delay in milliseconds before retrying a request.
+	MaxRetryDelayMs pulumi.IntPtrInput
+	// Minimum delay in milliseconds before retrying a request.
+	MinRetryDelayMs pulumi.IntPtrInput
+	// Skip waiting for a linode_instance resource to finish deleting.
+	SkipInstanceDeletePoll pulumi.BoolPtrInput
+	// Skip waiting for a linode_instance resource to be running.
+	SkipInstanceReadyPoll pulumi.BoolPtrInput
 	// The token that allows you access to your Linode account
-	Token pulumi.StringPtrInput
+	Token pulumi.StringInput
 	// An HTTP User-Agent Prefix to prepend in API requests.
 	UaPrefix pulumi.StringPtrInput
 	// The HTTP(S) API address of the Linode API to use.
@@ -68,4 +99,99 @@ type ProviderArgs struct {
 
 func (ProviderArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*providerArgs)(nil)).Elem()
+}
+
+type ProviderInput interface {
+	pulumi.Input
+
+	ToProviderOutput() ProviderOutput
+	ToProviderOutputWithContext(ctx context.Context) ProviderOutput
+}
+
+func (*Provider) ElementType() reflect.Type {
+	return reflect.TypeOf((*Provider)(nil))
+}
+
+func (i *Provider) ToProviderOutput() ProviderOutput {
+	return i.ToProviderOutputWithContext(context.Background())
+}
+
+func (i *Provider) ToProviderOutputWithContext(ctx context.Context) ProviderOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ProviderOutput)
+}
+
+func (i *Provider) ToProviderPtrOutput() ProviderPtrOutput {
+	return i.ToProviderPtrOutputWithContext(context.Background())
+}
+
+func (i *Provider) ToProviderPtrOutputWithContext(ctx context.Context) ProviderPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ProviderPtrOutput)
+}
+
+type ProviderPtrInput interface {
+	pulumi.Input
+
+	ToProviderPtrOutput() ProviderPtrOutput
+	ToProviderPtrOutputWithContext(ctx context.Context) ProviderPtrOutput
+}
+
+type providerPtrType ProviderArgs
+
+func (*providerPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**Provider)(nil))
+}
+
+func (i *providerPtrType) ToProviderPtrOutput() ProviderPtrOutput {
+	return i.ToProviderPtrOutputWithContext(context.Background())
+}
+
+func (i *providerPtrType) ToProviderPtrOutputWithContext(ctx context.Context) ProviderPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ProviderPtrOutput)
+}
+
+type ProviderOutput struct {
+	*pulumi.OutputState
+}
+
+func (ProviderOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*Provider)(nil))
+}
+
+func (o ProviderOutput) ToProviderOutput() ProviderOutput {
+	return o
+}
+
+func (o ProviderOutput) ToProviderOutputWithContext(ctx context.Context) ProviderOutput {
+	return o
+}
+
+func (o ProviderOutput) ToProviderPtrOutput() ProviderPtrOutput {
+	return o.ToProviderPtrOutputWithContext(context.Background())
+}
+
+func (o ProviderOutput) ToProviderPtrOutputWithContext(ctx context.Context) ProviderPtrOutput {
+	return o.ApplyT(func(v Provider) *Provider {
+		return &v
+	}).(ProviderPtrOutput)
+}
+
+type ProviderPtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (ProviderPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**Provider)(nil))
+}
+
+func (o ProviderPtrOutput) ToProviderPtrOutput() ProviderPtrOutput {
+	return o
+}
+
+func (o ProviderPtrOutput) ToProviderPtrOutputWithContext(ctx context.Context) ProviderPtrOutput {
+	return o
+}
+
+func init() {
+	pulumi.RegisterOutputType(ProviderOutput{})
+	pulumi.RegisterOutputType(ProviderPtrOutput{})
 }

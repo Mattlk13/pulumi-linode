@@ -24,7 +24,7 @@ namespace Pulumi.Linode
     ///     {
     ///         var my_cluster = new Linode.LkeCluster("my-cluster", new Linode.LkeClusterArgs
     ///         {
-    ///             K8sVersion = "1.17",
+    ///             K8sVersion = "1.20",
     ///             Label = "my-cluster",
     ///             Pools = 
     ///             {
@@ -44,7 +44,16 @@ namespace Pulumi.Linode
     /// 
     /// }
     /// ```
+    /// 
+    /// ## Import
+    /// 
+    /// LKE Clusters can be imported using the `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/lkeCluster:LkeCluster my_cluster 12345
+    /// ```
     /// </summary>
+    [LinodeResourceType("linode:index/lkeCluster:LkeCluster")]
     public partial class LkeCluster : Pulumi.CustomResource
     {
         /// <summary>
@@ -84,7 +93,7 @@ namespace Pulumi.Linode
         public Output<string> Region { get; private set; } = null!;
 
         /// <summary>
-        /// The status of the node.
+        /// The status of the node. (`ready`, `not_ready`)
         /// </summary>
         [Output("status")]
         public Output<string> Status { get; private set; } = null!;
@@ -239,7 +248,7 @@ namespace Pulumi.Linode
         public Input<string>? Region { get; set; }
 
         /// <summary>
-        /// The status of the node.
+        /// The status of the node. (`ready`, `not_ready`)
         /// </summary>
         [Input("status")]
         public Input<string>? Status { get; set; }

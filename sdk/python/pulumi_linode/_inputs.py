@@ -5,8 +5,8 @@
 import warnings
 import pulumi
 import pulumi.runtime
-from typing import Any, Mapping, Optional, Sequence, Union
-from . import _utilities, _tables
+from typing import Any, Mapping, Optional, Sequence, Union, overload
+from . import _utilities
 
 __all__ = [
     'FirewallDeviceArgs',
@@ -26,15 +26,32 @@ __all__ = [
     'InstanceConfigDevicesSdgArgs',
     'InstanceConfigDevicesSdhArgs',
     'InstanceConfigHelpersArgs',
+    'InstanceConfigInterfaceArgs',
     'InstanceDiskArgs',
+    'InstanceInterfaceArgs',
     'InstanceSpecsArgs',
     'LkeClusterPoolArgs',
     'LkeClusterPoolNodeArgs',
     'NodeBalancerConfigNodeStatusArgs',
     'NodeBalancerTransferArgs',
     'ObjectStorageBucketCertArgs',
+    'ObjectStorageBucketLifecycleRuleArgs',
+    'ObjectStorageBucketLifecycleRuleExpirationArgs',
+    'ObjectStorageBucketLifecycleRuleNoncurrentVersionExpirationArgs',
+    'ObjectStorageKeyBucketAccessArgs',
     'StackScriptUserDefinedFieldArgs',
+    'UserDomainGrantArgs',
+    'UserGlobalGrantsArgs',
+    'UserImageGrantArgs',
+    'UserLinodeGrantArgs',
+    'UserLongviewGrantArgs',
+    'UserNodebalancerGrantArgs',
+    'UserStackscriptGrantArgs',
+    'UserVolumeGrantArgs',
+    'GetImagesFilterArgs',
+    'GetInstancesFilterArgs',
     'GetStackScriptUserDefinedFieldArgs',
+    'GetVlansFilterArgs',
 ]
 
 @pulumi.input_type
@@ -48,7 +65,7 @@ class FirewallDeviceArgs:
         """
         :param pulumi.Input[int] entity_id: The ID of the underlying entity this device references (i.e. the Linode's ID).
         :param pulumi.Input[int] id: The ID of the Firewall Device.
-        :param pulumi.Input[str] label: This Firewall's unique label.
+        :param pulumi.Input[str] label: Used to identify this rule. For display purposes only.
         :param pulumi.Input[str] type: The type of Firewall Device.
         """
         if entity_id is not None:
@@ -90,7 +107,7 @@ class FirewallDeviceArgs:
     @pulumi.getter
     def label(self) -> Optional[pulumi.Input[str]]:
         """
-        This Firewall's unique label.
+        Used to identify this rule. For display purposes only.
         """
         return pulumi.get(self, "label")
 
@@ -123,105 +140,201 @@ class FirewallDeviceArgs:
 @pulumi.input_type
 class FirewallInboundArgs:
     def __init__(__self__, *,
-                 addresses: pulumi.Input[Sequence[pulumi.Input[str]]],
-                 ports: pulumi.Input[Sequence[pulumi.Input[str]]],
-                 protocol: pulumi.Input[str]):
+                 action: pulumi.Input[str],
+                 label: pulumi.Input[str],
+                 protocol: pulumi.Input[str],
+                 ipv4s: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
+                 ipv6s: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
+                 ports: Optional[pulumi.Input[str]] = None):
         """
-        :param pulumi.Input[Sequence[pulumi.Input[str]]] addresses: A list of IP addresses, CIDR blocks, or `0.0.0.0/0` (to allow all) this rule applies to.
-        :param pulumi.Input[Sequence[pulumi.Input[str]]] ports: A list of ports and/or port ranges (i.e. "443" or "80-90").
-        :param pulumi.Input[str] protocol: The network protocol this rule controls.
+        :param pulumi.Input[str] action: Controls whether traffic is accepted or dropped by this rule (`ACCEPT`, `DROP`). Overrides the Firewall’s inbound_policy if this is an inbound rule, or the outbound_policy if this is an outbound rule.
+        :param pulumi.Input[str] label: Used to identify this rule. For display purposes only.
+        :param pulumi.Input[str] protocol: The network protocol this rule controls. (`TCP`, `UDP`, `ICMP`)
+        :param pulumi.Input[Sequence[pulumi.Input[str]]] ipv4s: A list of IPv4 addresses or networks. Must be in IP/mask format.
+        :param pulumi.Input[Sequence[pulumi.Input[str]]] ipv6s: A list of IPv6 addresses or networks. Must be in IP/mask format.
+        :param pulumi.Input[str] ports: A string representation of ports and/or port ranges (i.e. "443" or "80-90, 91").
         """
-        pulumi.set(__self__, "addresses", addresses)
-        pulumi.set(__self__, "ports", ports)
+        pulumi.set(__self__, "action", action)
+        pulumi.set(__self__, "label", label)
         pulumi.set(__self__, "protocol", protocol)
+        if ipv4s is not None:
+            pulumi.set(__self__, "ipv4s", ipv4s)
+        if ipv6s is not None:
+            pulumi.set(__self__, "ipv6s", ipv6s)
+        if ports is not None:
+            pulumi.set(__self__, "ports", ports)
 
     @property
     @pulumi.getter
-    def addresses(self) -> pulumi.Input[Sequence[pulumi.Input[str]]]:
+    def action(self) -> pulumi.Input[str]:
         """
-        A list of IP addresses, CIDR blocks, or `0.0.0.0/0` (to allow all) this rule applies to.
+        Controls whether traffic is accepted or dropped by this rule (`ACCEPT`, `DROP`). Overrides the Firewall’s inbound_policy if this is an inbound rule, or the outbound_policy if this is an outbound rule.
         """
-        return pulumi.get(self, "addresses")
+        return pulumi.get(self, "action")
 
-    @addresses.setter
-    def addresses(self, value: pulumi.Input[Sequence[pulumi.Input[str]]]):
-        pulumi.set(self, "addresses", value)
+    @action.setter
+    def action(self, value: pulumi.Input[str]):
+        pulumi.set(self, "action", value)
 
     @property
     @pulumi.getter
-    def ports(self) -> pulumi.Input[Sequence[pulumi.Input[str]]]:
+    def label(self) -> pulumi.Input[str]:
         """
-        A list of ports and/or port ranges (i.e. "443" or "80-90").
+        Used to identify this rule. For display purposes only.
         """
-        return pulumi.get(self, "ports")
+        return pulumi.get(self, "label")
 
-    @ports.setter
-    def ports(self, value: pulumi.Input[Sequence[pulumi.Input[str]]]):
-        pulumi.set(self, "ports", value)
+    @label.setter
+    def label(self, value: pulumi.Input[str]):
+        pulumi.set(self, "label", value)
 
     @property
     @pulumi.getter
     def protocol(self) -> pulumi.Input[str]:
         """
-        The network protocol this rule controls.
+        The network protocol this rule controls. (`TCP`, `UDP`, `ICMP`)
         """
         return pulumi.get(self, "protocol")
 
     @protocol.setter
     def protocol(self, value: pulumi.Input[str]):
         pulumi.set(self, "protocol", value)
+
+    @property
+    @pulumi.getter
+    def ipv4s(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]:
+        """
+        A list of IPv4 addresses or networks. Must be in IP/mask format.
+        """
+        return pulumi.get(self, "ipv4s")
+
+    @ipv4s.setter
+    def ipv4s(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]):
+        pulumi.set(self, "ipv4s", value)
+
+    @property
+    @pulumi.getter
+    def ipv6s(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]:
+        """
+        A list of IPv6 addresses or networks. Must be in IP/mask format.
+        """
+        return pulumi.get(self, "ipv6s")
+
+    @ipv6s.setter
+    def ipv6s(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]):
+        pulumi.set(self, "ipv6s", value)
+
+    @property
+    @pulumi.getter
+    def ports(self) -> Optional[pulumi.Input[str]]:
+        """
+        A string representation of ports and/or port ranges (i.e. "443" or "80-90, 91").
+        """
+        return pulumi.get(self, "ports")
+
+    @ports.setter
+    def ports(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "ports", value)
 
 
 @pulumi.input_type
 class FirewallOutboundArgs:
     def __init__(__self__, *,
-                 addresses: pulumi.Input[Sequence[pulumi.Input[str]]],
-                 ports: pulumi.Input[Sequence[pulumi.Input[str]]],
-                 protocol: pulumi.Input[str]):
+                 action: pulumi.Input[str],
+                 label: pulumi.Input[str],
+                 protocol: pulumi.Input[str],
+                 ipv4s: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
+                 ipv6s: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,
+                 ports: Optional[pulumi.Input[str]] = None):
         """
-        :param pulumi.Input[Sequence[pulumi.Input[str]]] addresses: A list of IP addresses, CIDR blocks, or `0.0.0.0/0` (to allow all) this rule applies to.
-        :param pulumi.Input[Sequence[pulumi.Input[str]]] ports: A list of ports and/or port ranges (i.e. "443" or "80-90").
-        :param pulumi.Input[str] protocol: The network protocol this rule controls.
+        :param pulumi.Input[str] action: Controls whether traffic is accepted or dropped by this rule (`ACCEPT`, `DROP`). Overrides the Firewall’s inbound_policy if this is an inbound rule, or the outbound_policy if this is an outbound rule.
+        :param pulumi.Input[str] label: Used to identify this rule. For display purposes only.
+        :param pulumi.Input[str] protocol: The network protocol this rule controls. (`TCP`, `UDP`, `ICMP`)
+        :param pulumi.Input[Sequence[pulumi.Input[str]]] ipv4s: A list of IPv4 addresses or networks. Must be in IP/mask format.
+        :param pulumi.Input[Sequence[pulumi.Input[str]]] ipv6s: A list of IPv6 addresses or networks. Must be in IP/mask format.
+        :param pulumi.Input[str] ports: A string representation of ports and/or port ranges (i.e. "443" or "80-90, 91").
         """
-        pulumi.set(__self__, "addresses", addresses)
-        pulumi.set(__self__, "ports", ports)
+        pulumi.set(__self__, "action", action)
+        pulumi.set(__self__, "label", label)
         pulumi.set(__self__, "protocol", protocol)
+        if ipv4s is not None:
+            pulumi.set(__self__, "ipv4s", ipv4s)
+        if ipv6s is not None:
+            pulumi.set(__self__, "ipv6s", ipv6s)
+        if ports is not None:
+            pulumi.set(__self__, "ports", ports)
 
     @property
     @pulumi.getter
-    def addresses(self) -> pulumi.Input[Sequence[pulumi.Input[str]]]:
+    def action(self) -> pulumi.Input[str]:
         """
-        A list of IP addresses, CIDR blocks, or `0.0.0.0/0` (to allow all) this rule applies to.
+        Controls whether traffic is accepted or dropped by this rule (`ACCEPT`, `DROP`). Overrides the Firewall’s inbound_policy if this is an inbound rule, or the outbound_policy if this is an outbound rule.
         """
-        return pulumi.get(self, "addresses")
+        return pulumi.get(self, "action")
 
-    @addresses.setter
-    def addresses(self, value: pulumi.Input[Sequence[pulumi.Input[str]]]):
-        pulumi.set(self, "addresses", value)
+    @action.setter
+    def action(self, value: pulumi.Input[str]):
+        pulumi.set(self, "action", value)
 
     @property
     @pulumi.getter
-    def ports(self) -> pulumi.Input[Sequence[pulumi.Input[str]]]:
+    def label(self) -> pulumi.Input[str]:
         """
-        A list of ports and/or port ranges (i.e. "443" or "80-90").
+        Used to identify this rule. For display purposes only.
         """
-        return pulumi.get(self, "ports")
+        return pulumi.get(self, "label")
 
-    @ports.setter
-    def ports(self, value: pulumi.Input[Sequence[pulumi.Input[str]]]):
-        pulumi.set(self, "ports", value)
+    @label.setter
+    def label(self, value: pulumi.Input[str]):
+        pulumi.set(self, "label", value)
 
     @property
     @pulumi.getter
     def protocol(self) -> pulumi.Input[str]:
         """
-        The network protocol this rule controls.
+        The network protocol this rule controls. (`TCP`, `UDP`, `ICMP`)
         """
         return pulumi.get(self, "protocol")
 
     @protocol.setter
     def protocol(self, value: pulumi.Input[str]):
         pulumi.set(self, "protocol", value)
+
+    @property
+    @pulumi.getter
+    def ipv4s(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]:
+        """
+        A list of IPv4 addresses or networks. Must be in IP/mask format.
+        """
+        return pulumi.get(self, "ipv4s")
+
+    @ipv4s.setter
+    def ipv4s(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]):
+        pulumi.set(self, "ipv4s", value)
+
+    @property
+    @pulumi.getter
+    def ipv6s(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]:
+        """
+        A list of IPv6 addresses or networks. Must be in IP/mask format.
+        """
+        return pulumi.get(self, "ipv6s")
+
+    @ipv6s.setter
+    def ipv6s(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]]):
+        pulumi.set(self, "ipv6s", value)
+
+    @property
+    @pulumi.getter
+    def ports(self) -> Optional[pulumi.Input[str]]:
+        """
+        A string representation of ports and/or port ranges (i.e. "443" or "80-90, 91").
+        """
+        return pulumi.get(self, "ports")
+
+    @ports.setter
+    def ports(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "ports", value)
 
 
 @pulumi.input_type
@@ -354,13 +467,14 @@ class InstanceConfigArgs:
                  comments: Optional[pulumi.Input[str]] = None,
                  devices: Optional[pulumi.Input['InstanceConfigDevicesArgs']] = None,
                  helpers: Optional[pulumi.Input['InstanceConfigHelpersArgs']] = None,
+                 interfaces: Optional[pulumi.Input[Sequence[pulumi.Input['InstanceConfigInterfaceArgs']]]] = None,
                  kernel: Optional[pulumi.Input[str]] = None,
                  memory_limit: Optional[pulumi.Input[int]] = None,
                  root_device: Optional[pulumi.Input[str]] = None,
                  run_level: Optional[pulumi.Input[str]] = None,
                  virt_mode: Optional[pulumi.Input[str]] = None):
         """
-        :param pulumi.Input[str] label: The Config's label for display purposes.  Also used by `boot_config_label`.
+        :param pulumi.Input[str] label: The name of this interface. If the interface is a VLAN, a label is required.
         :param pulumi.Input[str] comments: - Arbitrary user comments about this `config`.
         :param pulumi.Input['InstanceConfigDevicesArgs'] devices: A list of `disk` or `volume` attachments for this `config`.  If the `boot_config_label` omits a `devices` block, the Linode will not be booted.
         :param pulumi.Input['InstanceConfigHelpersArgs'] helpers: Helpers enabled when booting to this Linode Config.
@@ -377,6 +491,8 @@ class InstanceConfigArgs:
             pulumi.set(__self__, "devices", devices)
         if helpers is not None:
             pulumi.set(__self__, "helpers", helpers)
+        if interfaces is not None:
+            pulumi.set(__self__, "interfaces", interfaces)
         if kernel is not None:
             pulumi.set(__self__, "kernel", kernel)
         if memory_limit is not None:
@@ -392,7 +508,7 @@ class InstanceConfigArgs:
     @pulumi.getter
     def label(self) -> pulumi.Input[str]:
         """
-        The Config's label for display purposes.  Also used by `boot_config_label`.
+        The name of this interface. If the interface is a VLAN, a label is required.
         """
         return pulumi.get(self, "label")
 
@@ -435,6 +551,15 @@ class InstanceConfigArgs:
     @helpers.setter
     def helpers(self, value: Optional[pulumi.Input['InstanceConfigHelpersArgs']]):
         pulumi.set(self, "helpers", value)
+
+    @property
+    @pulumi.getter
+    def interfaces(self) -> Optional[pulumi.Input[Sequence[pulumi.Input['InstanceConfigInterfaceArgs']]]]:
+        return pulumi.get(self, "interfaces")
+
+    @interfaces.setter
+    def interfaces(self, value: Optional[pulumi.Input[Sequence[pulumi.Input['InstanceConfigInterfaceArgs']]]]):
+        pulumi.set(self, "interfaces", value)
 
     @property
     @pulumi.getter
@@ -1128,6 +1253,61 @@ class InstanceConfigHelpersArgs:
 
 
 @pulumi.input_type
+class InstanceConfigInterfaceArgs:
+    def __init__(__self__, *,
+                 ipam_address: Optional[pulumi.Input[str]] = None,
+                 label: Optional[pulumi.Input[str]] = None,
+                 purpose: Optional[pulumi.Input[str]] = None):
+        """
+        :param pulumi.Input[str] ipam_address: This Network Interface’s private IP address in Classless Inter-Domain Routing (CIDR) notation.
+        :param pulumi.Input[str] label: The name of this interface. If the interface is a VLAN, a label is required.
+        :param pulumi.Input[str] purpose: The type of interface. (`public`, `vlan`)
+        """
+        if ipam_address is not None:
+            pulumi.set(__self__, "ipam_address", ipam_address)
+        if label is not None:
+            pulumi.set(__self__, "label", label)
+        if purpose is not None:
+            pulumi.set(__self__, "purpose", purpose)
+
+    @property
+    @pulumi.getter(name="ipamAddress")
+    def ipam_address(self) -> Optional[pulumi.Input[str]]:
+        """
+        This Network Interface’s private IP address in Classless Inter-Domain Routing (CIDR) notation.
+        """
+        return pulumi.get(self, "ipam_address")
+
+    @ipam_address.setter
+    def ipam_address(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "ipam_address", value)
+
+    @property
+    @pulumi.getter
+    def label(self) -> Optional[pulumi.Input[str]]:
+        """
+        The name of this interface. If the interface is a VLAN, a label is required.
+        """
+        return pulumi.get(self, "label")
+
+    @label.setter
+    def label(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "label", value)
+
+    @property
+    @pulumi.getter
+    def purpose(self) -> Optional[pulumi.Input[str]]:
+        """
+        The type of interface. (`public`, `vlan`)
+        """
+        return pulumi.get(self, "purpose")
+
+    @purpose.setter
+    def purpose(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "purpose", value)
+
+
+@pulumi.input_type
 class InstanceDiskArgs:
     def __init__(__self__, *,
                  label: pulumi.Input[str],
@@ -1142,7 +1322,7 @@ class InstanceDiskArgs:
                  stackscript_data: Optional[pulumi.Input[Mapping[str, Any]]] = None,
                  stackscript_id: Optional[pulumi.Input[int]] = None):
         """
-        :param pulumi.Input[str] label: The Config's label for display purposes.  Also used by `boot_config_label`.
+        :param pulumi.Input[str] label: The name of this interface. If the interface is a VLAN, a label is required.
         :param pulumi.Input[int] size: The size of the Disk in MB.
         :param pulumi.Input[Sequence[pulumi.Input[str]]] authorized_keys: A list of SSH public keys to deploy for the root user on the newly created Linode. Only accepted if `image` is provided. *This value can not be imported.* *Changing `authorized_keys` forces the creation of a new Linode Instance.*
         :param pulumi.Input[Sequence[pulumi.Input[str]]] authorized_users: A list of Linode usernames. If the usernames have associated SSH keys, the keys will be appended to the `root` user's `~/.ssh/authorized_keys` file automatically. *This value can not be imported.* *Changing `authorized_users` forces the creation of a new Linode Instance.*
@@ -1178,7 +1358,7 @@ class InstanceDiskArgs:
     @pulumi.getter
     def label(self) -> pulumi.Input[str]:
         """
-        The Config's label for display purposes.  Also used by `boot_config_label`.
+        The name of this interface. If the interface is a VLAN, a label is required.
         """
         return pulumi.get(self, "label")
 
@@ -1305,6 +1485,61 @@ class InstanceDiskArgs:
 
 
 @pulumi.input_type
+class InstanceInterfaceArgs:
+    def __init__(__self__, *,
+                 ipam_address: Optional[pulumi.Input[str]] = None,
+                 label: Optional[pulumi.Input[str]] = None,
+                 purpose: Optional[pulumi.Input[str]] = None):
+        """
+        :param pulumi.Input[str] ipam_address: This Network Interface’s private IP address in Classless Inter-Domain Routing (CIDR) notation.
+        :param pulumi.Input[str] label: The name of this interface. If the interface is a VLAN, a label is required.
+        :param pulumi.Input[str] purpose: The type of interface. (`public`, `vlan`)
+        """
+        if ipam_address is not None:
+            pulumi.set(__self__, "ipam_address", ipam_address)
+        if label is not None:
+            pulumi.set(__self__, "label", label)
+        if purpose is not None:
+            pulumi.set(__self__, "purpose", purpose)
+
+    @property
+    @pulumi.getter(name="ipamAddress")
+    def ipam_address(self) -> Optional[pulumi.Input[str]]:
+        """
+        This Network Interface’s private IP address in Classless Inter-Domain Routing (CIDR) notation.
+        """
+        return pulumi.get(self, "ipam_address")
+
+    @ipam_address.setter
+    def ipam_address(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "ipam_address", value)
+
+    @property
+    @pulumi.getter
+    def label(self) -> Optional[pulumi.Input[str]]:
+        """
+        The name of this interface. If the interface is a VLAN, a label is required.
+        """
+        return pulumi.get(self, "label")
+
+    @label.setter
+    def label(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "label", value)
+
+    @property
+    @pulumi.getter
+    def purpose(self) -> Optional[pulumi.Input[str]]:
+        """
+        The type of interface. (`public`, `vlan`)
+        """
+        return pulumi.get(self, "purpose")
+
+    @purpose.setter
+    def purpose(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "purpose", value)
+
+
+@pulumi.input_type
 class InstanceSpecsArgs:
     def __init__(__self__, *,
                  disk: Optional[pulumi.Input[int]] = None,
@@ -1366,7 +1601,7 @@ class LkeClusterPoolArgs:
                  nodes: Optional[pulumi.Input[Sequence[pulumi.Input['LkeClusterPoolNodeArgs']]]] = None):
         """
         :param pulumi.Input[int] count: The number of nodes in the Node Pool.
-        :param pulumi.Input[str] type: A Linode Type for all of the nodes in the Node Pool.
+        :param pulumi.Input[str] type: A Linode Type for all of the nodes in the Node Pool. See all node types [here](https://api.linode.com/v4/linode/types).
         :param pulumi.Input[int] id: The ID of the node.
         """
         pulumi.set(__self__, "count", count)
@@ -1392,7 +1627,7 @@ class LkeClusterPoolArgs:
     @pulumi.getter
     def type(self) -> pulumi.Input[str]:
         """
-        A Linode Type for all of the nodes in the Node Pool.
+        A Linode Type for all of the nodes in the Node Pool. See all node types [here](https://api.linode.com/v4/linode/types).
         """
         return pulumi.get(self, "type")
 
@@ -1431,7 +1666,7 @@ class LkeClusterPoolNodeArgs:
         """
         :param pulumi.Input[str] id: The ID of the node.
         :param pulumi.Input[int] instance_id: The ID of the underlying Linode instance.
-        :param pulumi.Input[str] status: The status of the node.
+        :param pulumi.Input[str] status: The status of the node. (`ready`, `not_ready`)
         """
         if id is not None:
             pulumi.set(__self__, "id", id)
@@ -1468,7 +1703,7 @@ class LkeClusterPoolNodeArgs:
     @pulumi.getter
     def status(self) -> Optional[pulumi.Input[str]]:
         """
-        The status of the node.
+        The status of the node. (`ready`, `not_ready`)
         """
         return pulumi.get(self, "status")
 
@@ -1480,30 +1715,30 @@ class LkeClusterPoolNodeArgs:
 @pulumi.input_type
 class NodeBalancerConfigNodeStatusArgs:
     def __init__(__self__, *,
-                 status_down: Optional[pulumi.Input[int]] = None,
-                 status_up: Optional[pulumi.Input[int]] = None):
-        if status_down is not None:
-            pulumi.set(__self__, "status_down", status_down)
-        if status_up is not None:
-            pulumi.set(__self__, "status_up", status_up)
+                 down: Optional[pulumi.Input[int]] = None,
+                 up: Optional[pulumi.Input[int]] = None):
+        if down is not None:
+            pulumi.set(__self__, "down", down)
+        if up is not None:
+            pulumi.set(__self__, "up", up)
 
     @property
-    @pulumi.getter(name="statusDown")
-    def status_down(self) -> Optional[pulumi.Input[int]]:
-        return pulumi.get(self, "status_down")
+    @pulumi.getter
+    def down(self) -> Optional[pulumi.Input[int]]:
+        return pulumi.get(self, "down")
 
-    @status_down.setter
-    def status_down(self, value: Optional[pulumi.Input[int]]):
-        pulumi.set(self, "status_down", value)
+    @down.setter
+    def down(self, value: Optional[pulumi.Input[int]]):
+        pulumi.set(self, "down", value)
 
     @property
-    @pulumi.getter(name="statusUp")
-    def status_up(self) -> Optional[pulumi.Input[int]]:
-        return pulumi.get(self, "status_up")
+    @pulumi.getter
+    def up(self) -> Optional[pulumi.Input[int]]:
+        return pulumi.get(self, "up")
 
-    @status_up.setter
-    def status_up(self, value: Optional[pulumi.Input[int]]):
-        pulumi.set(self, "status_up", value)
+    @up.setter
+    def up(self, value: Optional[pulumi.Input[int]]):
+        pulumi.set(self, "up", value)
 
 
 @pulumi.input_type
@@ -1582,6 +1817,229 @@ class ObjectStorageBucketCertArgs:
     @private_key.setter
     def private_key(self, value: pulumi.Input[str]):
         pulumi.set(self, "private_key", value)
+
+
+@pulumi.input_type
+class ObjectStorageBucketLifecycleRuleArgs:
+    def __init__(__self__, *,
+                 enabled: pulumi.Input[bool],
+                 abort_incomplete_multipart_upload_days: Optional[pulumi.Input[int]] = None,
+                 expiration: Optional[pulumi.Input['ObjectStorageBucketLifecycleRuleExpirationArgs']] = None,
+                 id: Optional[pulumi.Input[str]] = None,
+                 noncurrent_version_expiration: Optional[pulumi.Input['ObjectStorageBucketLifecycleRuleNoncurrentVersionExpirationArgs']] = None,
+                 prefix: Optional[pulumi.Input[str]] = None):
+        """
+        :param pulumi.Input[bool] enabled: Specifies whether the lifecycle rule is active.
+        :param pulumi.Input[int] abort_incomplete_multipart_upload_days: Specifies the number of days after initiating a multipart upload when the multipart upload must be completed.
+        :param pulumi.Input[str] id: The unique identifier for the rule.
+        :param pulumi.Input[str] prefix: The object key prefix identifying one or more objects to which the rule applies.
+        """
+        pulumi.set(__self__, "enabled", enabled)
+        if abort_incomplete_multipart_upload_days is not None:
+            pulumi.set(__self__, "abort_incomplete_multipart_upload_days", abort_incomplete_multipart_upload_days)
+        if expiration is not None:
+            pulumi.set(__self__, "expiration", expiration)
+        if id is not None:
+            pulumi.set(__self__, "id", id)
+        if noncurrent_version_expiration is not None:
+            pulumi.set(__self__, "noncurrent_version_expiration", noncurrent_version_expiration)
+        if prefix is not None:
+            pulumi.set(__self__, "prefix", prefix)
+
+    @property
+    @pulumi.getter
+    def enabled(self) -> pulumi.Input[bool]:
+        """
+        Specifies whether the lifecycle rule is active.
+        """
+        return pulumi.get(self, "enabled")
+
+    @enabled.setter
+    def enabled(self, value: pulumi.Input[bool]):
+        pulumi.set(self, "enabled", value)
+
+    @property
+    @pulumi.getter(name="abortIncompleteMultipartUploadDays")
+    def abort_incomplete_multipart_upload_days(self) -> Optional[pulumi.Input[int]]:
+        """
+        Specifies the number of days after initiating a multipart upload when the multipart upload must be completed.
+        """
+        return pulumi.get(self, "abort_incomplete_multipart_upload_days")
+
+    @abort_incomplete_multipart_upload_days.setter
+    def abort_incomplete_multipart_upload_days(self, value: Optional[pulumi.Input[int]]):
+        pulumi.set(self, "abort_incomplete_multipart_upload_days", value)
+
+    @property
+    @pulumi.getter
+    def expiration(self) -> Optional[pulumi.Input['ObjectStorageBucketLifecycleRuleExpirationArgs']]:
+        return pulumi.get(self, "expiration")
+
+    @expiration.setter
+    def expiration(self, value: Optional[pulumi.Input['ObjectStorageBucketLifecycleRuleExpirationArgs']]):
+        pulumi.set(self, "expiration", value)
+
+    @property
+    @pulumi.getter
+    def id(self) -> Optional[pulumi.Input[str]]:
+        """
+        The unique identifier for the rule.
+        """
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter(name="noncurrentVersionExpiration")
+    def noncurrent_version_expiration(self) -> Optional[pulumi.Input['ObjectStorageBucketLifecycleRuleNoncurrentVersionExpirationArgs']]:
+        return pulumi.get(self, "noncurrent_version_expiration")
+
+    @noncurrent_version_expiration.setter
+    def noncurrent_version_expiration(self, value: Optional[pulumi.Input['ObjectStorageBucketLifecycleRuleNoncurrentVersionExpirationArgs']]):
+        pulumi.set(self, "noncurrent_version_expiration", value)
+
+    @property
+    @pulumi.getter
+    def prefix(self) -> Optional[pulumi.Input[str]]:
+        """
+        The object key prefix identifying one or more objects to which the rule applies.
+        """
+        return pulumi.get(self, "prefix")
+
+    @prefix.setter
+    def prefix(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "prefix", value)
+
+
+@pulumi.input_type
+class ObjectStorageBucketLifecycleRuleExpirationArgs:
+    def __init__(__self__, *,
+                 date: Optional[pulumi.Input[str]] = None,
+                 days: Optional[pulumi.Input[int]] = None,
+                 expired_object_delete_marker: Optional[pulumi.Input[bool]] = None):
+        """
+        :param pulumi.Input[str] date: Specifies the date after which you want the corresponding action to take effect.
+        :param pulumi.Input[int] days: Specifies the number of days non-current object versions expire.
+        :param pulumi.Input[bool] expired_object_delete_marker: On a versioned bucket (versioning-enabled or versioning-suspended bucket), you can add this element in the lifecycle configuration to direct Linode Object Storage to delete expired object delete markers. This cannot be specified with Days or Date in a Lifecycle Expiration Policy.
+        """
+        if date is not None:
+            pulumi.set(__self__, "date", date)
+        if days is not None:
+            pulumi.set(__self__, "days", days)
+        if expired_object_delete_marker is not None:
+            pulumi.set(__self__, "expired_object_delete_marker", expired_object_delete_marker)
+
+    @property
+    @pulumi.getter
+    def date(self) -> Optional[pulumi.Input[str]]:
+        """
+        Specifies the date after which you want the corresponding action to take effect.
+        """
+        return pulumi.get(self, "date")
+
+    @date.setter
+    def date(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "date", value)
+
+    @property
+    @pulumi.getter
+    def days(self) -> Optional[pulumi.Input[int]]:
+        """
+        Specifies the number of days non-current object versions expire.
+        """
+        return pulumi.get(self, "days")
+
+    @days.setter
+    def days(self, value: Optional[pulumi.Input[int]]):
+        pulumi.set(self, "days", value)
+
+    @property
+    @pulumi.getter(name="expiredObjectDeleteMarker")
+    def expired_object_delete_marker(self) -> Optional[pulumi.Input[bool]]:
+        """
+        On a versioned bucket (versioning-enabled or versioning-suspended bucket), you can add this element in the lifecycle configuration to direct Linode Object Storage to delete expired object delete markers. This cannot be specified with Days or Date in a Lifecycle Expiration Policy.
+        """
+        return pulumi.get(self, "expired_object_delete_marker")
+
+    @expired_object_delete_marker.setter
+    def expired_object_delete_marker(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "expired_object_delete_marker", value)
+
+
+@pulumi.input_type
+class ObjectStorageBucketLifecycleRuleNoncurrentVersionExpirationArgs:
+    def __init__(__self__, *,
+                 days: pulumi.Input[int]):
+        """
+        :param pulumi.Input[int] days: Specifies the number of days non-current object versions expire.
+        """
+        pulumi.set(__self__, "days", days)
+
+    @property
+    @pulumi.getter
+    def days(self) -> pulumi.Input[int]:
+        """
+        Specifies the number of days non-current object versions expire.
+        """
+        return pulumi.get(self, "days")
+
+    @days.setter
+    def days(self, value: pulumi.Input[int]):
+        pulumi.set(self, "days", value)
+
+
+@pulumi.input_type
+class ObjectStorageKeyBucketAccessArgs:
+    def __init__(__self__, *,
+                 bucket_name: pulumi.Input[str],
+                 cluster: pulumi.Input[str],
+                 permissions: pulumi.Input[str]):
+        """
+        :param pulumi.Input[str] bucket_name: The unique label of the bucket to which the key will grant limited access.
+        :param pulumi.Input[str] cluster: The Object Storage cluster where a bucket to which the key is granting access is hosted.
+        :param pulumi.Input[str] permissions: This Limited Access Key’s permissions for the selected bucket. *Changing `permissions` forces the creation of a new Object Storage Key.* (`read_write`, `read_only`)
+        """
+        pulumi.set(__self__, "bucket_name", bucket_name)
+        pulumi.set(__self__, "cluster", cluster)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter(name="bucketName")
+    def bucket_name(self) -> pulumi.Input[str]:
+        """
+        The unique label of the bucket to which the key will grant limited access.
+        """
+        return pulumi.get(self, "bucket_name")
+
+    @bucket_name.setter
+    def bucket_name(self, value: pulumi.Input[str]):
+        pulumi.set(self, "bucket_name", value)
+
+    @property
+    @pulumi.getter
+    def cluster(self) -> pulumi.Input[str]:
+        """
+        The Object Storage cluster where a bucket to which the key is granting access is hosted.
+        """
+        return pulumi.get(self, "cluster")
+
+    @cluster.setter
+    def cluster(self, value: pulumi.Input[str]):
+        pulumi.set(self, "cluster", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        """
+        This Limited Access Key’s permissions for the selected bucket. *Changing `permissions` forces the creation of a new Object Storage Key.* (`read_write`, `read_only`)
+        """
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
 
 
 @pulumi.input_type
@@ -1668,6 +2126,394 @@ class StackScriptUserDefinedFieldArgs:
 
 
 @pulumi.input_type
+class UserDomainGrantArgs:
+    def __init__(__self__, *,
+                 id: pulumi.Input[int],
+                 permissions: pulumi.Input[str]):
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter
+    def id(self) -> pulumi.Input[int]:
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: pulumi.Input[int]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
+
+
+@pulumi.input_type
+class UserGlobalGrantsArgs:
+    def __init__(__self__, *,
+                 account_access: Optional[pulumi.Input[str]] = None,
+                 add_domains: Optional[pulumi.Input[bool]] = None,
+                 add_images: Optional[pulumi.Input[bool]] = None,
+                 add_linodes: Optional[pulumi.Input[bool]] = None,
+                 add_longview: Optional[pulumi.Input[bool]] = None,
+                 add_nodebalancers: Optional[pulumi.Input[bool]] = None,
+                 add_stackscripts: Optional[pulumi.Input[bool]] = None,
+                 add_volumes: Optional[pulumi.Input[bool]] = None,
+                 cancel_account: Optional[pulumi.Input[bool]] = None,
+                 longview_subscription: Optional[pulumi.Input[bool]] = None):
+        if account_access is not None:
+            pulumi.set(__self__, "account_access", account_access)
+        if add_domains is not None:
+            pulumi.set(__self__, "add_domains", add_domains)
+        if add_images is not None:
+            pulumi.set(__self__, "add_images", add_images)
+        if add_linodes is not None:
+            pulumi.set(__self__, "add_linodes", add_linodes)
+        if add_longview is not None:
+            pulumi.set(__self__, "add_longview", add_longview)
+        if add_nodebalancers is not None:
+            pulumi.set(__self__, "add_nodebalancers", add_nodebalancers)
+        if add_stackscripts is not None:
+            pulumi.set(__self__, "add_stackscripts", add_stackscripts)
+        if add_volumes is not None:
+            pulumi.set(__self__, "add_volumes", add_volumes)
+        if cancel_account is not None:
+            pulumi.set(__self__, "cancel_account", cancel_account)
+        if longview_subscription is not None:
+            pulumi.set(__self__, "longview_subscription", longview_subscription)
+
+    @property
+    @pulumi.getter(name="accountAccess")
+    def account_access(self) -> Optional[pulumi.Input[str]]:
+        return pulumi.get(self, "account_access")
+
+    @account_access.setter
+    def account_access(self, value: Optional[pulumi.Input[str]]):
+        pulumi.set(self, "account_access", value)
+
+    @property
+    @pulumi.getter(name="addDomains")
+    def add_domains(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "add_domains")
+
+    @add_domains.setter
+    def add_domains(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "add_domains", value)
+
+    @property
+    @pulumi.getter(name="addImages")
+    def add_images(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "add_images")
+
+    @add_images.setter
+    def add_images(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "add_images", value)
+
+    @property
+    @pulumi.getter(name="addLinodes")
+    def add_linodes(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "add_linodes")
+
+    @add_linodes.setter
+    def add_linodes(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "add_linodes", value)
+
+    @property
+    @pulumi.getter(name="addLongview")
+    def add_longview(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "add_longview")
+
+    @add_longview.setter
+    def add_longview(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "add_longview", value)
+
+    @property
+    @pulumi.getter(name="addNodebalancers")
+    def add_nodebalancers(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "add_nodebalancers")
+
+    @add_nodebalancers.setter
+    def add_nodebalancers(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "add_nodebalancers", value)
+
+    @property
+    @pulumi.getter(name="addStackscripts")
+    def add_stackscripts(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "add_stackscripts")
+
+    @add_stackscripts.setter
+    def add_stackscripts(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "add_stackscripts", value)
+
+    @property
+    @pulumi.getter(name="addVolumes")
+    def add_volumes(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "add_volumes")
+
+    @add_volumes.setter
+    def add_volumes(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "add_volumes", value)
+
+    @property
+    @pulumi.getter(name="cancelAccount")
+    def cancel_account(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "cancel_account")
+
+    @cancel_account.setter
+    def cancel_account(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "cancel_account", value)
+
+    @property
+    @pulumi.getter(name="longviewSubscription")
+    def longview_subscription(self) -> Optional[pulumi.Input[bool]]:
+        return pulumi.get(self, "longview_subscription")
+
+    @longview_subscription.setter
+    def longview_subscription(self, value: Optional[pulumi.Input[bool]]):
+        pulumi.set(self, "longview_subscription", value)
+
+
+@pulumi.input_type
+class UserImageGrantArgs:
+    def __init__(__self__, *,
+                 id: pulumi.Input[int],
+                 permissions: pulumi.Input[str]):
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter
+    def id(self) -> pulumi.Input[int]:
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: pulumi.Input[int]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
+
+
+@pulumi.input_type
+class UserLinodeGrantArgs:
+    def __init__(__self__, *,
+                 id: pulumi.Input[int],
+                 permissions: pulumi.Input[str]):
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter
+    def id(self) -> pulumi.Input[int]:
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: pulumi.Input[int]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
+
+
+@pulumi.input_type
+class UserLongviewGrantArgs:
+    def __init__(__self__, *,
+                 id: pulumi.Input[int],
+                 permissions: pulumi.Input[str]):
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter
+    def id(self) -> pulumi.Input[int]:
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: pulumi.Input[int]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
+
+
+@pulumi.input_type
+class UserNodebalancerGrantArgs:
+    def __init__(__self__, *,
+                 id: pulumi.Input[int],
+                 permissions: pulumi.Input[str]):
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter
+    def id(self) -> pulumi.Input[int]:
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: pulumi.Input[int]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
+
+
+@pulumi.input_type
+class UserStackscriptGrantArgs:
+    def __init__(__self__, *,
+                 id: pulumi.Input[int],
+                 permissions: pulumi.Input[str]):
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter
+    def id(self) -> pulumi.Input[int]:
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: pulumi.Input[int]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
+
+
+@pulumi.input_type
+class UserVolumeGrantArgs:
+    def __init__(__self__, *,
+                 id: pulumi.Input[int],
+                 permissions: pulumi.Input[str]):
+        pulumi.set(__self__, "id", id)
+        pulumi.set(__self__, "permissions", permissions)
+
+    @property
+    @pulumi.getter
+    def id(self) -> pulumi.Input[int]:
+        return pulumi.get(self, "id")
+
+    @id.setter
+    def id(self, value: pulumi.Input[int]):
+        pulumi.set(self, "id", value)
+
+    @property
+    @pulumi.getter
+    def permissions(self) -> pulumi.Input[str]:
+        return pulumi.get(self, "permissions")
+
+    @permissions.setter
+    def permissions(self, value: pulumi.Input[str]):
+        pulumi.set(self, "permissions", value)
+
+
+@pulumi.input_type
+class GetImagesFilterArgs:
+    def __init__(__self__, *,
+                 name: str,
+                 values: Sequence[str]):
+        """
+        :param str name: The name of the field to filter by. See the Filterable Fields section for a complete list of filterable fields.
+        :param Sequence[str] values: A list of values for the filter to allow. These values should all be in string form.
+        """
+        pulumi.set(__self__, "name", name)
+        pulumi.set(__self__, "values", values)
+
+    @property
+    @pulumi.getter
+    def name(self) -> str:
+        """
+        The name of the field to filter by. See the Filterable Fields section for a complete list of filterable fields.
+        """
+        return pulumi.get(self, "name")
+
+    @name.setter
+    def name(self, value: str):
+        pulumi.set(self, "name", value)
+
+    @property
+    @pulumi.getter
+    def values(self) -> Sequence[str]:
+        """
+        A list of values for the filter to allow. These values should all be in string form.
+        """
+        return pulumi.get(self, "values")
+
+    @values.setter
+    def values(self, value: Sequence[str]):
+        pulumi.set(self, "values", value)
+
+
+@pulumi.input_type
+class GetInstancesFilterArgs:
+    def __init__(__self__, *,
+                 name: str,
+                 values: Sequence[str]):
+        """
+        :param str name: The name of the field to filter by. See the Filterable Fields section for a list of filterable fields.
+        :param Sequence[str] values: A list of values for the filter to allow. These values should all be in string form.
+        """
+        pulumi.set(__self__, "name", name)
+        pulumi.set(__self__, "values", values)
+
+    @property
+    @pulumi.getter
+    def name(self) -> str:
+        """
+        The name of the field to filter by. See the Filterable Fields section for a list of filterable fields.
+        """
+        return pulumi.get(self, "name")
+
+    @name.setter
+    def name(self, value: str):
+        pulumi.set(self, "name", value)
+
+    @property
+    @pulumi.getter
+    def values(self) -> Sequence[str]:
+        """
+        A list of values for the filter to allow. These values should all be in string form.
+        """
+        return pulumi.get(self, "values")
+
+    @values.setter
+    def values(self, value: Sequence[str]):
+        pulumi.set(self, "values", value)
+
+
+@pulumi.input_type
 class GetStackScriptUserDefinedFieldArgs:
     def __init__(__self__, *,
                  default: str,
@@ -1736,5 +2582,42 @@ class GetStackScriptUserDefinedFieldArgs:
     @one_of.setter
     def one_of(self, value: str):
         pulumi.set(self, "one_of", value)
+
+
+@pulumi.input_type
+class GetVlansFilterArgs:
+    def __init__(__self__, *,
+                 name: str,
+                 values: Sequence[str]):
+        """
+        :param str name: The name of the field to filter by. See the Filterable Fields section for a complete list of filterable fields.
+        :param Sequence[str] values: A list of values for the filter to allow. These values should all be in string form.
+        """
+        pulumi.set(__self__, "name", name)
+        pulumi.set(__self__, "values", values)
+
+    @property
+    @pulumi.getter
+    def name(self) -> str:
+        """
+        The name of the field to filter by. See the Filterable Fields section for a complete list of filterable fields.
+        """
+        return pulumi.get(self, "name")
+
+    @name.setter
+    def name(self, value: str):
+        pulumi.set(self, "name", value)
+
+    @property
+    @pulumi.getter
+    def values(self) -> Sequence[str]:
+        """
+        A list of values for the filter to allow. These values should all be in string form.
+        """
+        return pulumi.get(self, "values")
+
+    @values.setter
+    def values(self, value: Sequence[str]):
+        pulumi.set(self, "values", value)
 
 

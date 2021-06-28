@@ -4,7 +4,7 @@
 package linode
 
 import (
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides information about a Linode Networking IP Address
@@ -17,8 +17,8 @@ import (
 // package main
 //
 // import (
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -53,7 +53,7 @@ import (
 //
 // * `linodeId` - The ID of the Linode this address currently belongs to.
 //
-// * `region` - The Region this IP address resides in.
+// * `region` - The Region this IP address resides in. See all regions [here](https://api.linode.com/v4/regions).
 func GetNetworkingIp(ctx *pulumi.Context, args *GetNetworkingIpArgs, opts ...pulumi.InvokeOption) (*GetNetworkingIpResult, error) {
 	var rv GetNetworkingIpResult
 	err := ctx.Invoke("linode:index/getNetworkingIp:getNetworkingIp", args, &rv, opts...)

@@ -33,20 +33,27 @@ export class Provider extends pulumi.ProviderResource {
      * @param args The arguments to use to populate this resource's properties.
      * @param opts A bag of options that control this resource's behavior.
      */
-    constructor(name: string, args?: ProviderArgs, opts?: pulumi.ResourceOptions) {
+    constructor(name: string, args: ProviderArgs, opts?: pulumi.ResourceOptions) {
         let inputs: pulumi.Inputs = {};
+        opts = opts || {};
         {
-            inputs["apiVersion"] = (args ? args.apiVersion : undefined) || utilities.getEnv("LINODE_API_VERSION");
-            inputs["token"] = (args ? args.token : undefined) || utilities.getEnv("LINODE_TOKEN", "LINODE_API_TOKEN");
-            inputs["uaPrefix"] = (args ? args.uaPrefix : undefined) || utilities.getEnv("LINODE_UA_PREFIX");
-            inputs["url"] = (args ? args.url : undefined) || utilities.getEnv("LINODE_URL");
+            if ((!args || args.token === undefined) && !opts.urn) {
+                throw new Error("Missing required property 'token'");
+            }
+            inputs["apiVersion"] = (args ? args.apiVersion : undefined) ?? utilities.getEnv("LINODE_API_VERSION");
+            inputs["eventPollMs"] = pulumi.output(args ? args.eventPollMs : undefined).apply(JSON.stringify);
+            inputs["lkeEventPollMs"] = pulumi.output(args ? args.lkeEventPollMs : undefined).apply(JSON.stringify);
+            inputs["lkeNodeReadyPollMs"] = pulumi.output(args ? args.lkeNodeReadyPollMs : undefined).apply(JSON.stringify);
+            inputs["maxRetryDelayMs"] = pulumi.output(args ? args.maxRetryDelayMs : undefined).apply(JSON.stringify);
+            inputs["minRetryDelayMs"] = pulumi.output(args ? args.minRetryDelayMs : undefined).apply(JSON.stringify);
+            inputs["skipInstanceDeletePoll"] = pulumi.output(args ? args.skipInstanceDeletePoll : undefined).apply(JSON.stringify);
+            inputs["skipInstanceReadyPoll"] = pulumi.output(args ? args.skipInstanceReadyPoll : undefined).apply(JSON.stringify);
+            inputs["token"] = args ? args.token : undefined;
+            inputs["uaPrefix"] = (args ? args.uaPrefix : undefined) ?? utilities.getEnv("LINODE_UA_PREFIX");
+            inputs["url"] = (args ? args.url : undefined) ?? utilities.getEnv("LINODE_URL");
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(Provider.__pulumiType, name, inputs, opts);
     }
@@ -61,9 +68,37 @@ export interface ProviderArgs {
      */
     readonly apiVersion?: pulumi.Input<string>;
     /**
+     * The rate in milliseconds to poll for events.
+     */
+    readonly eventPollMs?: pulumi.Input<number>;
+    /**
+     * The rate in milliseconds to poll for LKE events.
+     */
+    readonly lkeEventPollMs?: pulumi.Input<number>;
+    /**
+     * The rate in milliseconds to poll for an LKE node to be ready.
+     */
+    readonly lkeNodeReadyPollMs?: pulumi.Input<number>;
+    /**
+     * Maximum delay in milliseconds before retrying a request.
+     */
+    readonly maxRetryDelayMs?: pulumi.Input<number>;
+    /**
+     * Minimum delay in milliseconds before retrying a request.
+     */
+    readonly minRetryDelayMs?: pulumi.Input<number>;
+    /**
+     * Skip waiting for a linode_instance resource to finish deleting.
+     */
+    readonly skipInstanceDeletePoll?: pulumi.Input<boolean>;
+    /**
+     * Skip waiting for a linode_instance resource to be running.
+     */
+    readonly skipInstanceReadyPoll?: pulumi.Input<boolean>;
+    /**
      * The token that allows you access to your Linode account
      */
-    readonly token?: pulumi.Input<string>;
+    readonly token: pulumi.Input<string>;
     /**
      * An HTTP User-Agent Prefix to prepend in API requests.
      */

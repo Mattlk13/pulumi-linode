@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -19,33 +18,49 @@ import * as utilities from "./utilities";
  * import * as linode from "@pulumi/linode";
  *
  * const foobar = new linode.NodeBalancer("foobar", {
- *     clientConnThrottle: 20,
  *     label: "mynodebalancer",
  *     region: "us-east",
+ *     clientConnThrottle: 20,
  * });
  * const foofig = new linode.NodeBalancerConfig("foofig", {
- *     algorithm: "source",
- *     check: "http",
- *     checkAttempts: 3,
- *     checkPath: "/foo",
- *     checkTimeout: 30,
- *     nodebalancerId: foobar.id.apply(id => Number.parseFloat(id)),
+ *     nodebalancerId: foobar.id,
  *     port: 8088,
  *     protocol: "http",
+ *     check: "http",
+ *     checkPath: "/foo",
+ *     checkAttempts: 3,
+ *     checkTimeout: 30,
  *     stickiness: "http_cookie",
+ *     algorithm: "source",
  * });
  * ```
  * ## Attributes
  *
  * This resource exports the following attributes:
  *
- * * `sslCommonname` - The common name for the SSL certification this port is serving if this port is not configured to use SSL.
+ * * `sslCommonname` - The read-only common name automatically derived from the SSL certificate assigned to this NodeBalancerConfig. Please refer to this field to verify that the appropriate certificate is assigned to your NodeBalancerConfig.
  *
- * * `sslFingerprint` - The fingerprint for the SSL certification this port is serving if this port is not configured to use SSL.
+ * * `sslFingerprint` - The read-only fingerprint automatically derived from the SSL certificate assigned to this NodeBalancerConfig. Please refer to this field to verify that the appropriate certificate is assigned to your NodeBalancerConfig.
  *
- * * `nodeStatusUp` - The number of backends considered to be 'UP' and healthy, and that are serving requests.
+ * * `nodeStatus` - The status of the attached nodes.
  *
- * * `nodeStatusDown` - The number of backends considered to be 'DOWN' and unhealthy. These are not in rotation, and not serving requests.
+ * ### nodeStatus
+ *
+ * The following attributes are available on node_status:
+ *
+ * * `up` - The number of backends considered to be 'UP' and healthy, and that are serving requests.
+ *
+ * * `down` - The number of backends considered to be 'DOWN' and unhealthy. These are not in rotation, and not serving requests.
+ *
+ * ## Import
+ *
+ * NodeBalancer Configs can be imported using the NodeBalancer `nodebalancer_id` followed by the NodeBalancer Config `id` separated by a comma, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/nodeBalancerConfig:NodeBalancerConfig http-foobar 1234567,7654321
+ * ```
+ *
+ *  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for NodeBalancer Configs and other Linode resource types.
  */
 export class NodeBalancerConfig extends pulumi.CustomResource {
     /**
@@ -76,11 +91,11 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
     }
 
     /**
-     * What algorithm this NodeBalancer should use for routing traffic to backends: roundrobin, leastconn, source
+     * What algorithm this NodeBalancer should use for routing traffic to backends. (`roundrobin`, `leastconn`, `source`)
      */
     public readonly algorithm!: pulumi.Output<string>;
     /**
-     * The type of check to perform against backends to ensure they are serving requests. This is used to determine if backends are up or down. If none no check is performed. connection requires only a connection to the backend to succeed. http and httpBody rely on the backend serving HTTP, and that the response returned matches what is expected.
+     * The type of check to perform against backends to ensure they are serving requests. This is used to determine if backends are up or down. If none no check is performed. connection requires only a connection to the backend to succeed. http and httpBody rely on the backend serving HTTP, and that the response returned matches what is expected. (`none`, `connection`, `http`, `httpBody`)
      */
     public readonly check!: pulumi.Output<string>;
     /**
@@ -112,7 +127,11 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
      * What ciphers to use for SSL connections served by this NodeBalancer. `legacy` is considered insecure and should only be used if necessary.
      */
     public readonly cipherSuite!: pulumi.Output<string>;
-    public /*out*/ readonly nodeStatus!: pulumi.Output<outputs.NodeBalancerConfigNodeStatus>;
+    /**
+     * A structure containing information about the health of the backends for this port. This information is updated
+     * periodically as checks are performed against backends.
+     */
+    public /*out*/ readonly nodeStatuses!: pulumi.Output<outputs.NodeBalancerConfigNodeStatus[]>;
     /**
      * The ID of the NodeBalancer to access.
      */
@@ -122,11 +141,11 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
      */
     public readonly port!: pulumi.Output<number | undefined>;
     /**
-     * The protocol this port is configured to serve. If this is set to https you must include an sslCert and an ssl_key. (Defaults to "http")
+     * The protocol this port is configured to serve. If this is set to https you must include an sslCert and an ssl_key. (`http`, `https`, `tcp`) (Defaults to `http`)
      */
     public readonly protocol!: pulumi.Output<string | undefined>;
     /**
-     * The version of ProxyProtocol to use for the underlying NodeBalancer. This requires protocol to be `tcp`. Valid values are `none`, `v1`, and `v2`. (Defaults to `none`)
+     * The version of ProxyProtocol to use for the underlying NodeBalancer. This requires protocol to be `tcp`. (`none`, `v1`, `v2`) (Defaults to `none`)
      */
     public readonly proxyProtocol!: pulumi.Output<string | undefined>;
     /**
@@ -134,11 +153,13 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
      */
     public readonly sslCert!: pulumi.Output<string | undefined>;
     /**
-     * The common name for the SSL certification this port is serving if this port is not configured to use SSL.
+     * The read-only common name automatically derived from the SSL certificate assigned to this NodeBalancerConfig. Please
+     * refer to this field to verify that the appropriate certificate is assigned to your NodeBalancerConfig.
      */
     public /*out*/ readonly sslCommonname!: pulumi.Output<string>;
     /**
-     * The fingerprint for the SSL certification this port is serving if this port is not configured to use SSL.
+     * The read-only fingerprint automatically derived from the SSL certificate assigned to this NodeBalancerConfig. Please
+     * refer to this field to verify that the appropriate certificate is assigned to your NodeBalancerConfig.
      */
     public /*out*/ readonly sslFingerprint!: pulumi.Output<string>;
     /**
@@ -146,7 +167,7 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
      */
     public readonly sslKey!: pulumi.Output<string | undefined>;
     /**
-     * Controls how session stickiness is handled on this port: 'none', 'table', 'http_cookie'
+     * Controls how session stickiness is handled on this port. (`none`, `table`, `httpCookie`)
      */
     public readonly stickiness!: pulumi.Output<string>;
 
@@ -160,7 +181,8 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
     constructor(name: string, args: NodeBalancerConfigArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: NodeBalancerConfigArgs | NodeBalancerConfigState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as NodeBalancerConfigState | undefined;
             inputs["algorithm"] = state ? state.algorithm : undefined;
             inputs["check"] = state ? state.check : undefined;
@@ -171,7 +193,7 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
             inputs["checkPath"] = state ? state.checkPath : undefined;
             inputs["checkTimeout"] = state ? state.checkTimeout : undefined;
             inputs["cipherSuite"] = state ? state.cipherSuite : undefined;
-            inputs["nodeStatus"] = state ? state.nodeStatus : undefined;
+            inputs["nodeStatuses"] = state ? state.nodeStatuses : undefined;
             inputs["nodebalancerId"] = state ? state.nodebalancerId : undefined;
             inputs["port"] = state ? state.port : undefined;
             inputs["protocol"] = state ? state.protocol : undefined;
@@ -183,7 +205,7 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
             inputs["stickiness"] = state ? state.stickiness : undefined;
         } else {
             const args = argsOrState as NodeBalancerConfigArgs | undefined;
-            if (!args || args.nodebalancerId === undefined) {
+            if ((!args || args.nodebalancerId === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'nodebalancerId'");
             }
             inputs["algorithm"] = args ? args.algorithm : undefined;
@@ -202,16 +224,12 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
             inputs["sslCert"] = args ? args.sslCert : undefined;
             inputs["sslKey"] = args ? args.sslKey : undefined;
             inputs["stickiness"] = args ? args.stickiness : undefined;
-            inputs["nodeStatus"] = undefined /*out*/;
+            inputs["nodeStatuses"] = undefined /*out*/;
             inputs["sslCommonname"] = undefined /*out*/;
             inputs["sslFingerprint"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(NodeBalancerConfig.__pulumiType, name, inputs, opts);
     }
@@ -222,11 +240,11 @@ export class NodeBalancerConfig extends pulumi.CustomResource {
  */
 export interface NodeBalancerConfigState {
     /**
-     * What algorithm this NodeBalancer should use for routing traffic to backends: roundrobin, leastconn, source
+     * What algorithm this NodeBalancer should use for routing traffic to backends. (`roundrobin`, `leastconn`, `source`)
      */
     readonly algorithm?: pulumi.Input<string>;
     /**
-     * The type of check to perform against backends to ensure they are serving requests. This is used to determine if backends are up or down. If none no check is performed. connection requires only a connection to the backend to succeed. http and httpBody rely on the backend serving HTTP, and that the response returned matches what is expected.
+     * The type of check to perform against backends to ensure they are serving requests. This is used to determine if backends are up or down. If none no check is performed. connection requires only a connection to the backend to succeed. http and httpBody rely on the backend serving HTTP, and that the response returned matches what is expected. (`none`, `connection`, `http`, `httpBody`)
      */
     readonly check?: pulumi.Input<string>;
     /**
@@ -258,7 +276,11 @@ export interface NodeBalancerConfigState {
      * What ciphers to use for SSL connections served by this NodeBalancer. `legacy` is considered insecure and should only be used if necessary.
      */
     readonly cipherSuite?: pulumi.Input<string>;
-    readonly nodeStatus?: pulumi.Input<inputs.NodeBalancerConfigNodeStatus>;
+    /**
+     * A structure containing information about the health of the backends for this port. This information is updated
+     * periodically as checks are performed against backends.
+     */
+    readonly nodeStatuses?: pulumi.Input<pulumi.Input<inputs.NodeBalancerConfigNodeStatus>[]>;
     /**
      * The ID of the NodeBalancer to access.
      */
@@ -268,11 +290,11 @@ export interface NodeBalancerConfigState {
      */
     readonly port?: pulumi.Input<number>;
     /**
-     * The protocol this port is configured to serve. If this is set to https you must include an sslCert and an ssl_key. (Defaults to "http")
+     * The protocol this port is configured to serve. If this is set to https you must include an sslCert and an ssl_key. (`http`, `https`, `tcp`) (Defaults to `http`)
      */
     readonly protocol?: pulumi.Input<string>;
     /**
-     * The version of ProxyProtocol to use for the underlying NodeBalancer. This requires protocol to be `tcp`. Valid values are `none`, `v1`, and `v2`. (Defaults to `none`)
+     * The version of ProxyProtocol to use for the underlying NodeBalancer. This requires protocol to be `tcp`. (`none`, `v1`, `v2`) (Defaults to `none`)
      */
     readonly proxyProtocol?: pulumi.Input<string>;
     /**
@@ -280,11 +302,13 @@ export interface NodeBalancerConfigState {
      */
     readonly sslCert?: pulumi.Input<string>;
     /**
-     * The common name for the SSL certification this port is serving if this port is not configured to use SSL.
+     * The read-only common name automatically derived from the SSL certificate assigned to this NodeBalancerConfig. Please
+     * refer to this field to verify that the appropriate certificate is assigned to your NodeBalancerConfig.
      */
     readonly sslCommonname?: pulumi.Input<string>;
     /**
-     * The fingerprint for the SSL certification this port is serving if this port is not configured to use SSL.
+     * The read-only fingerprint automatically derived from the SSL certificate assigned to this NodeBalancerConfig. Please
+     * refer to this field to verify that the appropriate certificate is assigned to your NodeBalancerConfig.
      */
     readonly sslFingerprint?: pulumi.Input<string>;
     /**
@@ -292,7 +316,7 @@ export interface NodeBalancerConfigState {
      */
     readonly sslKey?: pulumi.Input<string>;
     /**
-     * Controls how session stickiness is handled on this port: 'none', 'table', 'http_cookie'
+     * Controls how session stickiness is handled on this port. (`none`, `table`, `httpCookie`)
      */
     readonly stickiness?: pulumi.Input<string>;
 }
@@ -302,11 +326,11 @@ export interface NodeBalancerConfigState {
  */
 export interface NodeBalancerConfigArgs {
     /**
-     * What algorithm this NodeBalancer should use for routing traffic to backends: roundrobin, leastconn, source
+     * What algorithm this NodeBalancer should use for routing traffic to backends. (`roundrobin`, `leastconn`, `source`)
      */
     readonly algorithm?: pulumi.Input<string>;
     /**
-     * The type of check to perform against backends to ensure they are serving requests. This is used to determine if backends are up or down. If none no check is performed. connection requires only a connection to the backend to succeed. http and httpBody rely on the backend serving HTTP, and that the response returned matches what is expected.
+     * The type of check to perform against backends to ensure they are serving requests. This is used to determine if backends are up or down. If none no check is performed. connection requires only a connection to the backend to succeed. http and httpBody rely on the backend serving HTTP, and that the response returned matches what is expected. (`none`, `connection`, `http`, `httpBody`)
      */
     readonly check?: pulumi.Input<string>;
     /**
@@ -347,11 +371,11 @@ export interface NodeBalancerConfigArgs {
      */
     readonly port?: pulumi.Input<number>;
     /**
-     * The protocol this port is configured to serve. If this is set to https you must include an sslCert and an ssl_key. (Defaults to "http")
+     * The protocol this port is configured to serve. If this is set to https you must include an sslCert and an ssl_key. (`http`, `https`, `tcp`) (Defaults to `http`)
      */
     readonly protocol?: pulumi.Input<string>;
     /**
-     * The version of ProxyProtocol to use for the underlying NodeBalancer. This requires protocol to be `tcp`. Valid values are `none`, `v1`, and `v2`. (Defaults to `none`)
+     * The version of ProxyProtocol to use for the underlying NodeBalancer. This requires protocol to be `tcp`. (`none`, `v1`, `v2`) (Defaults to `none`)
      */
     readonly proxyProtocol?: pulumi.Input<string>;
     /**
@@ -363,7 +387,7 @@ export interface NodeBalancerConfigArgs {
      */
     readonly sslKey?: pulumi.Input<string>;
     /**
-     * Controls how session stickiness is handled on this port: 'none', 'table', 'http_cookie'
+     * Controls how session stickiness is handled on this port. (`none`, `table`, `httpCookie`)
      */
     readonly stickiness?: pulumi.Input<string>;
 }

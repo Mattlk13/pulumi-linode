@@ -2,6 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -26,6 +27,8 @@ import * as utilities from "./utilities";
  * * `accessKey` - This keypair's access key. This is not secret.
  *
  * * `secretKey` - This keypair's secret key.
+ *
+ * * `limited` - Whether or not this key is a limited access key.
  */
 export class ObjectStorageKey extends pulumi.CustomResource {
     /**
@@ -60,9 +63,17 @@ export class ObjectStorageKey extends pulumi.CustomResource {
      */
     public /*out*/ readonly accessKey!: pulumi.Output<string>;
     /**
+     * Defines this key as a Limited Access Key. Limited Access Keys restrict this Object Storage key’s access to only the bucket(s) declared in this array and define their bucket-level permissions. Not providing this block will not limit this Object Storage Key.
+     */
+    public readonly bucketAccesses!: pulumi.Output<outputs.ObjectStorageKeyBucketAccess[] | undefined>;
+    /**
      * The label given to this key. For display purposes only.
      */
     public readonly label!: pulumi.Output<string>;
+    /**
+     * Whether or not this key is a limited access key.
+     */
+    public /*out*/ readonly limited!: pulumi.Output<boolean>;
     /**
      * This keypair's secret key.
      */
@@ -78,26 +89,27 @@ export class ObjectStorageKey extends pulumi.CustomResource {
     constructor(name: string, args: ObjectStorageKeyArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: ObjectStorageKeyArgs | ObjectStorageKeyState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as ObjectStorageKeyState | undefined;
             inputs["accessKey"] = state ? state.accessKey : undefined;
+            inputs["bucketAccesses"] = state ? state.bucketAccesses : undefined;
             inputs["label"] = state ? state.label : undefined;
+            inputs["limited"] = state ? state.limited : undefined;
             inputs["secretKey"] = state ? state.secretKey : undefined;
         } else {
             const args = argsOrState as ObjectStorageKeyArgs | undefined;
-            if (!args || args.label === undefined) {
+            if ((!args || args.label === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'label'");
             }
+            inputs["bucketAccesses"] = args ? args.bucketAccesses : undefined;
             inputs["label"] = args ? args.label : undefined;
             inputs["accessKey"] = undefined /*out*/;
+            inputs["limited"] = undefined /*out*/;
             inputs["secretKey"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(ObjectStorageKey.__pulumiType, name, inputs, opts);
     }
@@ -112,9 +124,17 @@ export interface ObjectStorageKeyState {
      */
     readonly accessKey?: pulumi.Input<string>;
     /**
+     * Defines this key as a Limited Access Key. Limited Access Keys restrict this Object Storage key’s access to only the bucket(s) declared in this array and define their bucket-level permissions. Not providing this block will not limit this Object Storage Key.
+     */
+    readonly bucketAccesses?: pulumi.Input<pulumi.Input<inputs.ObjectStorageKeyBucketAccess>[]>;
+    /**
      * The label given to this key. For display purposes only.
      */
     readonly label?: pulumi.Input<string>;
+    /**
+     * Whether or not this key is a limited access key.
+     */
+    readonly limited?: pulumi.Input<boolean>;
     /**
      * This keypair's secret key.
      */
@@ -125,6 +145,10 @@ export interface ObjectStorageKeyState {
  * The set of arguments for constructing a ObjectStorageKey resource.
  */
 export interface ObjectStorageKeyArgs {
+    /**
+     * Defines this key as a Limited Access Key. Limited Access Keys restrict this Object Storage key’s access to only the bucket(s) declared in this array and define their bucket-level permissions. Not providing this block will not limit this Object Storage Key.
+     */
+    readonly bucketAccesses?: pulumi.Input<pulumi.Input<inputs.ObjectStorageKeyBucketAccess>[]>;
     /**
      * The label given to this key. For display purposes only.
      */

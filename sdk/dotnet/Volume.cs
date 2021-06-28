@@ -28,19 +28,19 @@ namespace Pulumi.Linode
     ///     {
     ///         var foobaz = new Linode.Instance("foobaz", new Linode.InstanceArgs
     ///         {
-    ///             Region = "us-west",
     ///             RootPass = "3X4mp13",
+    ///             Type = "g6-nanode-1",
+    ///             Region = "us-west",
     ///             Tags = 
     ///             {
     ///                 "foobaz",
     ///             },
-    ///             Type = "g6-nanode-1",
     ///         });
     ///         var foobar = new Linode.Volume("foobar", new Linode.VolumeArgs
     ///         {
     ///             Label = "foo-volume",
-    ///             LinodeId = foobaz.Id,
     ///             Region = foobaz.Region,
+    ///             LinodeId = foobaz.Id,
     ///         });
     ///     }
     /// 
@@ -85,10 +85,21 @@ namespace Pulumi.Linode
     /// 
     /// This resource exports the following attributes:
     /// 
-    /// * `status` - The label of the Linode Volume.
+    /// * `status` - The status of the Linode Volume. (`creating`, `active`, `resizing`, `contact_support`)
     /// 
     /// * `filesystem_path` - The full filesystem path for the Volume based on the Volume's label. The path is "/dev/disk/by-id/scsi-0Linode_Volume_" + the Volume label
+    /// 
+    /// ## Import
+    /// 
+    /// Linodes Volumes can be imported using the Linode Volume `id`, e.g.
+    /// 
+    /// ```sh
+    ///  $ pulumi import linode:index/volume:Volume myvolume 1234567
+    /// ```
+    /// 
+    ///  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Block Storage Volumes and other Linode resource types.
     /// </summary>
+    [LinodeResourceType("linode:index/volume:Volume")]
     public partial class Volume : Pulumi.CustomResource
     {
         /// <summary>
@@ -111,7 +122,7 @@ namespace Pulumi.Linode
         public Output<int> LinodeId { get; private set; } = null!;
 
         /// <summary>
-        /// The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode Volume.*.
+        /// The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions). *Changing `region` forces the creation of a new Linode Volume.*.
         /// </summary>
         [Output("region")]
         public Output<string> Region { get; private set; } = null!;
@@ -193,7 +204,7 @@ namespace Pulumi.Linode
         public Input<int>? LinodeId { get; set; }
 
         /// <summary>
-        /// The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode Volume.*.
+        /// The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions). *Changing `region` forces the creation of a new Linode Volume.*.
         /// </summary>
         [Input("region", required: true)]
         public Input<string> Region { get; set; } = null!;
@@ -243,7 +254,7 @@ namespace Pulumi.Linode
         public Input<int>? LinodeId { get; set; }
 
         /// <summary>
-        /// The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode Volume.*.
+        /// The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions). *Changing `region` forces the creation of a new Linode Volume.*.
         /// </summary>
         [Input("region")]
         public Input<string>? Region { get; set; }

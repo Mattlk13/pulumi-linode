@@ -16,17 +16,17 @@ import * as utilities from "./utilities";
  * import * as pulumi from "@pulumi/pulumi";
  * import * as linode from "@pulumi/linode";
  *
- * const foobarDomain = new linode.Domain("foobar", {
+ * const foobarDomain = new linode.Domain("foobarDomain", {
+ *     type: "master",
  *     domain: "foobar.example",
  *     soaEmail: "example@foobar.example",
  *     tags: [
  *         "foo",
  *         "bar",
  *     ],
- *     type: "master",
  * });
- * const foobarDomainRecord = new linode.DomainRecord("foobar", {
- *     domainId: foobarDomain.id.apply(id => Number.parseFloat(id)),
+ * const foobarDomainRecord = new linode.DomainRecord("foobarDomainRecord", {
+ *     domainId: foobarDomain.id,
  *     name: "www",
  *     recordType: "CNAME",
  *     target: "foobar.example",
@@ -35,6 +35,16 @@ import * as utilities from "./utilities";
  * ## Attributes
  *
  * This resource exports no additional attributes, however `status` may reflect degraded states.
+ *
+ * ## Import
+ *
+ * Linodes Domains can be imported using the Linode Domain `id`, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/domain:Domain foobar 1234567
+ * ```
+ *
+ *  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Domains and other Linode resource types.
  */
 export class Domain extends pulumi.CustomResource {
     /**
@@ -127,7 +137,8 @@ export class Domain extends pulumi.CustomResource {
     constructor(name: string, args: DomainArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: DomainArgs | DomainState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as DomainState | undefined;
             inputs["axfrIps"] = state ? state.axfrIps : undefined;
             inputs["description"] = state ? state.description : undefined;
@@ -144,10 +155,10 @@ export class Domain extends pulumi.CustomResource {
             inputs["type"] = state ? state.type : undefined;
         } else {
             const args = argsOrState as DomainArgs | undefined;
-            if (!args || args.domain === undefined) {
+            if ((!args || args.domain === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'domain'");
             }
-            if (!args || args.type === undefined) {
+            if ((!args || args.type === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'type'");
             }
             inputs["axfrIps"] = args ? args.axfrIps : undefined;
@@ -164,12 +175,8 @@ export class Domain extends pulumi.CustomResource {
             inputs["ttlSec"] = args ? args.ttlSec : undefined;
             inputs["type"] = args ? args.type : undefined;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(Domain.__pulumiType, name, inputs, opts);
     }

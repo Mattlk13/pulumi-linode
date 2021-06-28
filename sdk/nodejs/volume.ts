@@ -18,15 +18,15 @@ import * as utilities from "./utilities";
  * import * as linode from "@pulumi/linode";
  *
  * const foobaz = new linode.Instance("foobaz", {
- *     region: "us-west",
  *     rootPass: "3X4mp13",
- *     tags: ["foobaz"],
  *     type: "g6-nanode-1",
+ *     region: "us-west",
+ *     tags: ["foobaz"],
  * });
  * const foobar = new linode.Volume("foobar", {
  *     label: "foo-volume",
- *     linodeId: foobaz.id.apply(id => Number.parseFloat(id)),
  *     region: foobaz.region,
+ *     linodeId: foobaz.id,
  * });
  * ```
  *
@@ -54,9 +54,19 @@ import * as utilities from "./utilities";
  *
  * This resource exports the following attributes:
  *
- * * `status` - The label of the Linode Volume.
+ * * `status` - The status of the Linode Volume. (`creating`, `active`, `resizing`, `contactSupport`)
  *
  * * `filesystemPath` - The full filesystem path for the Volume based on the Volume's label. The path is "/dev/disk/by-id/scsi-0Linode_Volume_" + the Volume label
+ *
+ * ## Import
+ *
+ * Linodes Volumes can be imported using the Linode Volume `id`, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/volume:Volume myvolume 1234567
+ * ```
+ *
+ *  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for Block Storage Volumes and other Linode resource types.
  */
 export class Volume extends pulumi.CustomResource {
     /**
@@ -100,7 +110,7 @@ export class Volume extends pulumi.CustomResource {
      */
     public readonly linodeId!: pulumi.Output<number>;
     /**
-     * The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode Volume.*.
+     * The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions). *Changing `region` forces the creation of a new Linode Volume.*.
      */
     public readonly region!: pulumi.Output<string>;
     /**
@@ -126,7 +136,8 @@ export class Volume extends pulumi.CustomResource {
     constructor(name: string, args: VolumeArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: VolumeArgs | VolumeState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as VolumeState | undefined;
             inputs["filesystemPath"] = state ? state.filesystemPath : undefined;
             inputs["label"] = state ? state.label : undefined;
@@ -137,10 +148,10 @@ export class Volume extends pulumi.CustomResource {
             inputs["tags"] = state ? state.tags : undefined;
         } else {
             const args = argsOrState as VolumeArgs | undefined;
-            if (!args || args.label === undefined) {
+            if ((!args || args.label === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'label'");
             }
-            if (!args || args.region === undefined) {
+            if ((!args || args.region === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'region'");
             }
             inputs["label"] = args ? args.label : undefined;
@@ -151,12 +162,8 @@ export class Volume extends pulumi.CustomResource {
             inputs["filesystemPath"] = undefined /*out*/;
             inputs["status"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(Volume.__pulumiType, name, inputs, opts);
     }
@@ -180,7 +187,7 @@ export interface VolumeState {
      */
     readonly linodeId?: pulumi.Input<number>;
     /**
-     * The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode Volume.*.
+     * The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions). *Changing `region` forces the creation of a new Linode Volume.*.
      */
     readonly region?: pulumi.Input<string>;
     /**
@@ -210,7 +217,7 @@ export interface VolumeArgs {
      */
     readonly linodeId?: pulumi.Input<number>;
     /**
-     * The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc.  *Changing `region` forces the creation of a new Linode Volume.*.
+     * The region where this volume will be deployed.  Examples are `"us-east"`, `"us-west"`, `"ap-south"`, etc. See all regions [here](https://api.linode.com/v4/regions). *Changing `region` forces the creation of a new Linode Volume.*.
      */
     readonly region: pulumi.Input<string>;
     /**

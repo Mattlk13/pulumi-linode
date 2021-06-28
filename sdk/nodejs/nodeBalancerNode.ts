@@ -16,41 +16,41 @@ import * as utilities from "./utilities";
  * import * as pulumi from "@pulumi/pulumi";
  * import * as linode from "@pulumi/linode";
  *
- * const web: linode.Instance[] = [];
- * for (let i = 0; i < 3; i++) {
- *     web.push(new linode.Instance(`web-${i}`, {
- *         authorizedKeys: ["ssh-rsa AAAA...Gw== user@example.local"],
+ * const web: linode.Instance[];
+ * for (const range = {value: 0}; range.value < "3"; range.value++) {
+ *     web.push(new linode.Instance(`web-${range.value}`, {
+ *         label: `web-${range.value + 1}`,
  *         image: "linode/ubuntu18.04",
- *         label: `web-${(i + 1)}`,
- *         privateIp: true,
  *         region: "us-east",
- *         rootPass: "test",
  *         type: "g6-standard-1",
+ *         authorizedKeys: ["ssh-rsa AAAA...Gw== user@example.local"],
+ *         rootPass: "test",
+ *         privateIp: true,
  *     }));
  * }
  * const foobar = new linode.NodeBalancer("foobar", {
- *     clientConnThrottle: 20,
  *     label: "mynodebalancer",
  *     region: "us-east",
+ *     clientConnThrottle: 20,
  * });
  * const foofig = new linode.NodeBalancerConfig("foofig", {
- *     algorithm: "source",
- *     check: "http",
- *     checkAttempts: 3,
- *     checkPath: "/foo",
- *     checkTimeout: 30,
- *     nodebalancerId: foobar.id.apply(id => Number.parseFloat(id)),
+ *     nodebalancerId: foobar.id,
  *     port: 80,
  *     protocol: "http",
+ *     check: "http",
+ *     checkPath: "/foo",
+ *     checkAttempts: 3,
+ *     checkTimeout: 30,
  *     stickiness: "http_cookie",
+ *     algorithm: "source",
  * });
- * const foonode: linode.NodeBalancerNode[] = [];
- * for (let i = 0; i < 3; i++) {
- *     foonode.push(new linode.NodeBalancerNode(`foonode-${i}`, {
- *         address: pulumi.all(web.map(v => v.privateIpAddress)).apply(privateIpAddress => `${privateIpAddress.map(v => v)[i]}:80`),
- *         configId: foofig.id.apply(id => Number.parseFloat(id)),
+ * const foonode: linode.NodeBalancerNode[];
+ * for (const range = {value: 0}; range.value < "3"; range.value++) {
+ *     foonode.push(new linode.NodeBalancerNode(`foonode-${range.value}`, {
+ *         nodebalancerId: foobar.id,
+ *         configId: foofig.id,
+ *         address: web.map(__item => __item.privateIpAddress)[range.value].apply(privateIpAddresses => `${privateIpAddresses}:80`),
  *         label: "mynodebalancernode",
- *         nodebalancerId: foobar.id.apply(id => Number.parseFloat(id)),
  *         weight: 50,
  *     }));
  * }
@@ -59,11 +59,21 @@ import * as utilities from "./utilities";
  *
  * This resource exports the following attributes:
  *
- * * `status` - The current status of this node, based on the configured checks of its NodeBalancer Config. (unknown, UP, DOWN).
+ * * `status` - The current status of this node, based on the configured checks of its NodeBalancer Config. (`unknown`, `UP`, `DOWN`).
  *
  * * `configId` - The ID of the NodeBalancerConfig this NodeBalancerNode is attached to.
  *
  * * `nodebalancerId` - The ID of the NodeBalancer this NodeBalancerNode is attached to.
+ *
+ * ## Import
+ *
+ * NodeBalancer Nodes can be imported using the NodeBalancer `nodebalancer_id` followed by the NodeBalancer Config `config_id` followed by the NodeBalancer Node `id`, separated by a comma, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/nodeBalancerNode:NodeBalancerNode https-foobar-1 1234567,7654321,9999999
+ * ```
+ *
+ *  The Linode Guide, [Import Existing Infrastructure to Terraform](https://www.linode.com/docs/applications/configuration-management/import-existing-infrastructure-to-terraform/), offers resource importing examples for NodeBalancer Nodes and other Linode resource types.
  */
 export class NodeBalancerNode extends pulumi.CustomResource {
     /**
@@ -106,7 +116,7 @@ export class NodeBalancerNode extends pulumi.CustomResource {
      */
     public readonly label!: pulumi.Output<string>;
     /**
-     * The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it
+     * The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it. (`accept`, `reject`, `drain`, `backup`)
      */
     public readonly mode!: pulumi.Output<string>;
     /**
@@ -132,7 +142,8 @@ export class NodeBalancerNode extends pulumi.CustomResource {
     constructor(name: string, args: NodeBalancerNodeArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: NodeBalancerNodeArgs | NodeBalancerNodeState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as NodeBalancerNodeState | undefined;
             inputs["address"] = state ? state.address : undefined;
             inputs["configId"] = state ? state.configId : undefined;
@@ -143,16 +154,16 @@ export class NodeBalancerNode extends pulumi.CustomResource {
             inputs["weight"] = state ? state.weight : undefined;
         } else {
             const args = argsOrState as NodeBalancerNodeArgs | undefined;
-            if (!args || args.address === undefined) {
+            if ((!args || args.address === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'address'");
             }
-            if (!args || args.configId === undefined) {
+            if ((!args || args.configId === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'configId'");
             }
-            if (!args || args.label === undefined) {
+            if ((!args || args.label === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'label'");
             }
-            if (!args || args.nodebalancerId === undefined) {
+            if ((!args || args.nodebalancerId === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'nodebalancerId'");
             }
             inputs["address"] = args ? args.address : undefined;
@@ -163,12 +174,8 @@ export class NodeBalancerNode extends pulumi.CustomResource {
             inputs["weight"] = args ? args.weight : undefined;
             inputs["status"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(NodeBalancerNode.__pulumiType, name, inputs, opts);
     }
@@ -191,7 +198,7 @@ export interface NodeBalancerNodeState {
      */
     readonly label?: pulumi.Input<string>;
     /**
-     * The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it
+     * The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it. (`accept`, `reject`, `drain`, `backup`)
      */
     readonly mode?: pulumi.Input<string>;
     /**
@@ -225,7 +232,7 @@ export interface NodeBalancerNodeArgs {
      */
     readonly label: pulumi.Input<string>;
     /**
-     * The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it
+     * The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it. (`accept`, `reject`, `drain`, `backup`)
      */
     readonly mode?: pulumi.Input<string>;
     /**

@@ -4,10 +4,11 @@
 package linode
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 // Provides a Linode Object Storage Bucket resource. This can be used to create, modify, and delete Linodes Object Storage Buckets.
@@ -22,8 +23,8 @@ import (
 // import (
 // 	"fmt"
 //
-// 	"github.com/pulumi/pulumi-linode/sdk/v2/go/linode"
-// 	"github.com/pulumi/pulumi/sdk/v2/go/pulumi"
+// 	"github.com/pulumi/pulumi-linode/sdk/v3/go/linode"
+// 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 // )
 //
 // func main() {
@@ -45,27 +46,49 @@ import (
 // 	})
 // }
 // ```
+//
+// ## Import
+//
+// Linodes Object Storage Buckets can be imported using the resource `id` which is made of `cluster:label`, e.g.
+//
+// ```sh
+//  $ pulumi import linode:index/objectStorageBucket:ObjectStorageBucket mybucket us-east-1:foobar
+// ```
 type ObjectStorageBucket struct {
 	pulumi.CustomResourceState
 
+	// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+	AccessKey pulumi.StringPtrOutput `pulumi:"accessKey"`
+	// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+	Acl pulumi.StringPtrOutput `pulumi:"acl"`
+	// The cert used by this Object Storage Bucket.
 	Cert ObjectStorageBucketCertPtrOutput `pulumi:"cert"`
 	// The cluster of the Linode Object Storage Bucket.
 	Cluster pulumi.StringOutput `pulumi:"cluster"`
+	// If true, the bucket will have CORS enabled for all origins.
+	CorsEnabled pulumi.BoolPtrOutput `pulumi:"corsEnabled"`
 	// The label of the Linode Object Storage Bucket.
 	Label pulumi.StringOutput `pulumi:"label"`
+	// Lifecycle rules to be applied to the bucket.
+	LifecycleRules ObjectStorageBucketLifecycleRuleArrayOutput `pulumi:"lifecycleRules"`
+	// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+	SecretKey pulumi.StringPtrOutput `pulumi:"secretKey"`
+	// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+	Versioning pulumi.BoolOutput `pulumi:"versioning"`
 }
 
 // NewObjectStorageBucket registers a new resource with the given unique name, arguments, and options.
 func NewObjectStorageBucket(ctx *pulumi.Context,
 	name string, args *ObjectStorageBucketArgs, opts ...pulumi.ResourceOption) (*ObjectStorageBucket, error) {
-	if args == nil || args.Cluster == nil {
-		return nil, errors.New("missing required argument 'Cluster'")
-	}
-	if args == nil || args.Label == nil {
-		return nil, errors.New("missing required argument 'Label'")
-	}
 	if args == nil {
-		args = &ObjectStorageBucketArgs{}
+		return nil, errors.New("missing one or more required arguments")
+	}
+
+	if args.Cluster == nil {
+		return nil, errors.New("invalid value for required argument 'Cluster'")
+	}
+	if args.Label == nil {
+		return nil, errors.New("invalid value for required argument 'Label'")
 	}
 	var resource ObjectStorageBucket
 	err := ctx.RegisterResource("linode:index/objectStorageBucket:ObjectStorageBucket", name, args, &resource, opts...)
@@ -89,19 +112,45 @@ func GetObjectStorageBucket(ctx *pulumi.Context,
 
 // Input properties used for looking up and filtering ObjectStorageBucket resources.
 type objectStorageBucketState struct {
+	// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+	AccessKey *string `pulumi:"accessKey"`
+	// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+	Acl *string `pulumi:"acl"`
+	// The cert used by this Object Storage Bucket.
 	Cert *ObjectStorageBucketCert `pulumi:"cert"`
 	// The cluster of the Linode Object Storage Bucket.
 	Cluster *string `pulumi:"cluster"`
+	// If true, the bucket will have CORS enabled for all origins.
+	CorsEnabled *bool `pulumi:"corsEnabled"`
 	// The label of the Linode Object Storage Bucket.
 	Label *string `pulumi:"label"`
+	// Lifecycle rules to be applied to the bucket.
+	LifecycleRules []ObjectStorageBucketLifecycleRule `pulumi:"lifecycleRules"`
+	// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+	SecretKey *string `pulumi:"secretKey"`
+	// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+	Versioning *bool `pulumi:"versioning"`
 }
 
 type ObjectStorageBucketState struct {
+	// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+	AccessKey pulumi.StringPtrInput
+	// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+	Acl pulumi.StringPtrInput
+	// The cert used by this Object Storage Bucket.
 	Cert ObjectStorageBucketCertPtrInput
 	// The cluster of the Linode Object Storage Bucket.
 	Cluster pulumi.StringPtrInput
+	// If true, the bucket will have CORS enabled for all origins.
+	CorsEnabled pulumi.BoolPtrInput
 	// The label of the Linode Object Storage Bucket.
 	Label pulumi.StringPtrInput
+	// Lifecycle rules to be applied to the bucket.
+	LifecycleRules ObjectStorageBucketLifecycleRuleArrayInput
+	// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+	SecretKey pulumi.StringPtrInput
+	// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+	Versioning pulumi.BoolPtrInput
 }
 
 func (ObjectStorageBucketState) ElementType() reflect.Type {
@@ -109,22 +158,235 @@ func (ObjectStorageBucketState) ElementType() reflect.Type {
 }
 
 type objectStorageBucketArgs struct {
+	// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+	AccessKey *string `pulumi:"accessKey"`
+	// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+	Acl *string `pulumi:"acl"`
+	// The cert used by this Object Storage Bucket.
 	Cert *ObjectStorageBucketCert `pulumi:"cert"`
 	// The cluster of the Linode Object Storage Bucket.
 	Cluster string `pulumi:"cluster"`
+	// If true, the bucket will have CORS enabled for all origins.
+	CorsEnabled *bool `pulumi:"corsEnabled"`
 	// The label of the Linode Object Storage Bucket.
 	Label string `pulumi:"label"`
+	// Lifecycle rules to be applied to the bucket.
+	LifecycleRules []ObjectStorageBucketLifecycleRule `pulumi:"lifecycleRules"`
+	// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+	SecretKey *string `pulumi:"secretKey"`
+	// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+	Versioning *bool `pulumi:"versioning"`
 }
 
 // The set of arguments for constructing a ObjectStorageBucket resource.
 type ObjectStorageBucketArgs struct {
+	// The S3 access key to use for this resource. (Required for lifecycle_rule and versioning)
+	AccessKey pulumi.StringPtrInput
+	// The Access Control Level of the bucket using a canned ACL string. See all ACL strings in the Linode API v4 documentation.
+	Acl pulumi.StringPtrInput
+	// The cert used by this Object Storage Bucket.
 	Cert ObjectStorageBucketCertPtrInput
 	// The cluster of the Linode Object Storage Bucket.
 	Cluster pulumi.StringInput
+	// If true, the bucket will have CORS enabled for all origins.
+	CorsEnabled pulumi.BoolPtrInput
 	// The label of the Linode Object Storage Bucket.
 	Label pulumi.StringInput
+	// Lifecycle rules to be applied to the bucket.
+	LifecycleRules ObjectStorageBucketLifecycleRuleArrayInput
+	// The S3 secret key to use for this resource. (Required for lifecycle_rule and versioning)
+	SecretKey pulumi.StringPtrInput
+	// Whether to enable versioning. Once you version-enable a bucket, it can never return to an unversioned state. You can, however, suspend versioning on that bucket.
+	Versioning pulumi.BoolPtrInput
 }
 
 func (ObjectStorageBucketArgs) ElementType() reflect.Type {
 	return reflect.TypeOf((*objectStorageBucketArgs)(nil)).Elem()
+}
+
+type ObjectStorageBucketInput interface {
+	pulumi.Input
+
+	ToObjectStorageBucketOutput() ObjectStorageBucketOutput
+	ToObjectStorageBucketOutputWithContext(ctx context.Context) ObjectStorageBucketOutput
+}
+
+func (*ObjectStorageBucket) ElementType() reflect.Type {
+	return reflect.TypeOf((*ObjectStorageBucket)(nil))
+}
+
+func (i *ObjectStorageBucket) ToObjectStorageBucketOutput() ObjectStorageBucketOutput {
+	return i.ToObjectStorageBucketOutputWithContext(context.Background())
+}
+
+func (i *ObjectStorageBucket) ToObjectStorageBucketOutputWithContext(ctx context.Context) ObjectStorageBucketOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageBucketOutput)
+}
+
+func (i *ObjectStorageBucket) ToObjectStorageBucketPtrOutput() ObjectStorageBucketPtrOutput {
+	return i.ToObjectStorageBucketPtrOutputWithContext(context.Background())
+}
+
+func (i *ObjectStorageBucket) ToObjectStorageBucketPtrOutputWithContext(ctx context.Context) ObjectStorageBucketPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageBucketPtrOutput)
+}
+
+type ObjectStorageBucketPtrInput interface {
+	pulumi.Input
+
+	ToObjectStorageBucketPtrOutput() ObjectStorageBucketPtrOutput
+	ToObjectStorageBucketPtrOutputWithContext(ctx context.Context) ObjectStorageBucketPtrOutput
+}
+
+type objectStorageBucketPtrType ObjectStorageBucketArgs
+
+func (*objectStorageBucketPtrType) ElementType() reflect.Type {
+	return reflect.TypeOf((**ObjectStorageBucket)(nil))
+}
+
+func (i *objectStorageBucketPtrType) ToObjectStorageBucketPtrOutput() ObjectStorageBucketPtrOutput {
+	return i.ToObjectStorageBucketPtrOutputWithContext(context.Background())
+}
+
+func (i *objectStorageBucketPtrType) ToObjectStorageBucketPtrOutputWithContext(ctx context.Context) ObjectStorageBucketPtrOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageBucketPtrOutput)
+}
+
+// ObjectStorageBucketArrayInput is an input type that accepts ObjectStorageBucketArray and ObjectStorageBucketArrayOutput values.
+// You can construct a concrete instance of `ObjectStorageBucketArrayInput` via:
+//
+//          ObjectStorageBucketArray{ ObjectStorageBucketArgs{...} }
+type ObjectStorageBucketArrayInput interface {
+	pulumi.Input
+
+	ToObjectStorageBucketArrayOutput() ObjectStorageBucketArrayOutput
+	ToObjectStorageBucketArrayOutputWithContext(context.Context) ObjectStorageBucketArrayOutput
+}
+
+type ObjectStorageBucketArray []ObjectStorageBucketInput
+
+func (ObjectStorageBucketArray) ElementType() reflect.Type {
+	return reflect.TypeOf(([]*ObjectStorageBucket)(nil))
+}
+
+func (i ObjectStorageBucketArray) ToObjectStorageBucketArrayOutput() ObjectStorageBucketArrayOutput {
+	return i.ToObjectStorageBucketArrayOutputWithContext(context.Background())
+}
+
+func (i ObjectStorageBucketArray) ToObjectStorageBucketArrayOutputWithContext(ctx context.Context) ObjectStorageBucketArrayOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageBucketArrayOutput)
+}
+
+// ObjectStorageBucketMapInput is an input type that accepts ObjectStorageBucketMap and ObjectStorageBucketMapOutput values.
+// You can construct a concrete instance of `ObjectStorageBucketMapInput` via:
+//
+//          ObjectStorageBucketMap{ "key": ObjectStorageBucketArgs{...} }
+type ObjectStorageBucketMapInput interface {
+	pulumi.Input
+
+	ToObjectStorageBucketMapOutput() ObjectStorageBucketMapOutput
+	ToObjectStorageBucketMapOutputWithContext(context.Context) ObjectStorageBucketMapOutput
+}
+
+type ObjectStorageBucketMap map[string]ObjectStorageBucketInput
+
+func (ObjectStorageBucketMap) ElementType() reflect.Type {
+	return reflect.TypeOf((map[string]*ObjectStorageBucket)(nil))
+}
+
+func (i ObjectStorageBucketMap) ToObjectStorageBucketMapOutput() ObjectStorageBucketMapOutput {
+	return i.ToObjectStorageBucketMapOutputWithContext(context.Background())
+}
+
+func (i ObjectStorageBucketMap) ToObjectStorageBucketMapOutputWithContext(ctx context.Context) ObjectStorageBucketMapOutput {
+	return pulumi.ToOutputWithContext(ctx, i).(ObjectStorageBucketMapOutput)
+}
+
+type ObjectStorageBucketOutput struct {
+	*pulumi.OutputState
+}
+
+func (ObjectStorageBucketOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*ObjectStorageBucket)(nil))
+}
+
+func (o ObjectStorageBucketOutput) ToObjectStorageBucketOutput() ObjectStorageBucketOutput {
+	return o
+}
+
+func (o ObjectStorageBucketOutput) ToObjectStorageBucketOutputWithContext(ctx context.Context) ObjectStorageBucketOutput {
+	return o
+}
+
+func (o ObjectStorageBucketOutput) ToObjectStorageBucketPtrOutput() ObjectStorageBucketPtrOutput {
+	return o.ToObjectStorageBucketPtrOutputWithContext(context.Background())
+}
+
+func (o ObjectStorageBucketOutput) ToObjectStorageBucketPtrOutputWithContext(ctx context.Context) ObjectStorageBucketPtrOutput {
+	return o.ApplyT(func(v ObjectStorageBucket) *ObjectStorageBucket {
+		return &v
+	}).(ObjectStorageBucketPtrOutput)
+}
+
+type ObjectStorageBucketPtrOutput struct {
+	*pulumi.OutputState
+}
+
+func (ObjectStorageBucketPtrOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((**ObjectStorageBucket)(nil))
+}
+
+func (o ObjectStorageBucketPtrOutput) ToObjectStorageBucketPtrOutput() ObjectStorageBucketPtrOutput {
+	return o
+}
+
+func (o ObjectStorageBucketPtrOutput) ToObjectStorageBucketPtrOutputWithContext(ctx context.Context) ObjectStorageBucketPtrOutput {
+	return o
+}
+
+type ObjectStorageBucketArrayOutput struct{ *pulumi.OutputState }
+
+func (ObjectStorageBucketArrayOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*[]ObjectStorageBucket)(nil))
+}
+
+func (o ObjectStorageBucketArrayOutput) ToObjectStorageBucketArrayOutput() ObjectStorageBucketArrayOutput {
+	return o
+}
+
+func (o ObjectStorageBucketArrayOutput) ToObjectStorageBucketArrayOutputWithContext(ctx context.Context) ObjectStorageBucketArrayOutput {
+	return o
+}
+
+func (o ObjectStorageBucketArrayOutput) Index(i pulumi.IntInput) ObjectStorageBucketOutput {
+	return pulumi.All(o, i).ApplyT(func(vs []interface{}) ObjectStorageBucket {
+		return vs[0].([]ObjectStorageBucket)[vs[1].(int)]
+	}).(ObjectStorageBucketOutput)
+}
+
+type ObjectStorageBucketMapOutput struct{ *pulumi.OutputState }
+
+func (ObjectStorageBucketMapOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*map[string]ObjectStorageBucket)(nil))
+}
+
+func (o ObjectStorageBucketMapOutput) ToObjectStorageBucketMapOutput() ObjectStorageBucketMapOutput {
+	return o
+}
+
+func (o ObjectStorageBucketMapOutput) ToObjectStorageBucketMapOutputWithContext(ctx context.Context) ObjectStorageBucketMapOutput {
+	return o
+}
+
+func (o ObjectStorageBucketMapOutput) MapIndex(k pulumi.StringInput) ObjectStorageBucketOutput {
+	return pulumi.All(o, k).ApplyT(func(vs []interface{}) ObjectStorageBucket {
+		return vs[0].(map[string]ObjectStorageBucket)[vs[1].(string)]
+	}).(ObjectStorageBucketOutput)
+}
+
+func init() {
+	pulumi.RegisterOutputType(ObjectStorageBucketOutput{})
+	pulumi.RegisterOutputType(ObjectStorageBucketPtrOutput{})
+	pulumi.RegisterOutputType(ObjectStorageBucketArrayOutput{})
+	pulumi.RegisterOutputType(ObjectStorageBucketMapOutput{})
 }

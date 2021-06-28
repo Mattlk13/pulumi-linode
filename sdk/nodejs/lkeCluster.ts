@@ -2,8 +2,7 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
-import * as inputs from "./types/input";
-import * as outputs from "./types/output";
+import { input as inputs, output as outputs } from "./types";
 import * as utilities from "./utilities";
 
 /**
@@ -16,7 +15,7 @@ import * as utilities from "./utilities";
  * import * as linode from "@pulumi/linode";
  *
  * const my_cluster = new linode.LkeCluster("my-cluster", {
- *     k8sVersion: "1.17",
+ *     k8sVersion: "1.20",
  *     label: "my-cluster",
  *     pools: [{
  *         count: 3,
@@ -25,6 +24,14 @@ import * as utilities from "./utilities";
  *     region: "us-central",
  *     tags: ["prod"],
  * });
+ * ```
+ *
+ * ## Import
+ *
+ * LKE Clusters can be imported using the `id`, e.g.
+ *
+ * ```sh
+ *  $ pulumi import linode:index/lkeCluster:LkeCluster my_cluster 12345
  * ```
  */
 export class LkeCluster extends pulumi.CustomResource {
@@ -80,7 +87,7 @@ export class LkeCluster extends pulumi.CustomResource {
      */
     public readonly region!: pulumi.Output<string>;
     /**
-     * The status of the node.
+     * The status of the node. (`ready`, `notReady`)
      */
     public /*out*/ readonly status!: pulumi.Output<string>;
     /**
@@ -98,7 +105,8 @@ export class LkeCluster extends pulumi.CustomResource {
     constructor(name: string, args: LkeClusterArgs, opts?: pulumi.CustomResourceOptions)
     constructor(name: string, argsOrState?: LkeClusterArgs | LkeClusterState, opts?: pulumi.CustomResourceOptions) {
         let inputs: pulumi.Inputs = {};
-        if (opts && opts.id) {
+        opts = opts || {};
+        if (opts.id) {
             const state = argsOrState as LkeClusterState | undefined;
             inputs["apiEndpoints"] = state ? state.apiEndpoints : undefined;
             inputs["k8sVersion"] = state ? state.k8sVersion : undefined;
@@ -110,16 +118,16 @@ export class LkeCluster extends pulumi.CustomResource {
             inputs["tags"] = state ? state.tags : undefined;
         } else {
             const args = argsOrState as LkeClusterArgs | undefined;
-            if (!args || args.k8sVersion === undefined) {
+            if ((!args || args.k8sVersion === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'k8sVersion'");
             }
-            if (!args || args.label === undefined) {
+            if ((!args || args.label === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'label'");
             }
-            if (!args || args.pools === undefined) {
+            if ((!args || args.pools === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'pools'");
             }
-            if (!args || args.region === undefined) {
+            if ((!args || args.region === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'region'");
             }
             inputs["k8sVersion"] = args ? args.k8sVersion : undefined;
@@ -131,12 +139,8 @@ export class LkeCluster extends pulumi.CustomResource {
             inputs["kubeconfig"] = undefined /*out*/;
             inputs["status"] = undefined /*out*/;
         }
-        if (!opts) {
-            opts = {}
-        }
-
         if (!opts.version) {
-            opts.version = utilities.getVersion();
+            opts = pulumi.mergeOptions(opts, { version: utilities.getVersion()});
         }
         super(LkeCluster.__pulumiType, name, inputs, opts);
     }
@@ -171,7 +175,7 @@ export interface LkeClusterState {
      */
     readonly region?: pulumi.Input<string>;
     /**
-     * The status of the node.
+     * The status of the node. (`ready`, `notReady`)
      */
     readonly status?: pulumi.Input<string>;
     /**
